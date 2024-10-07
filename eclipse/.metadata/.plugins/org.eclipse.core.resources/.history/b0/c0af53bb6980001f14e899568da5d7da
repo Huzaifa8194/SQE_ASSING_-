@@ -1,0 +1,155 @@
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.After;
+import static org.junit.Assert.*;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.List;
+
+public class EmployeeManagementTest {
+
+    private EmployeeManagement employeeManagement;
+    private static final String TEST_DATABASE = "Database/testEmployeeDatabase.txt";
+    private static final String TEST_TEMP = "Database/testNewEmployeeDatabase.txt";
+
+    @Before
+    public void setUp() throws IOException {
+        // Set up test database
+        EmployeeManagement.employeeDatabase = TEST_DATABASE;
+        employeeManagement = new EmployeeManagement();
+        employeeManagement.temp = TEST_TEMP;
+
+        // Create a test database file with sample data
+        File testFile = new File(TEST_DATABASE);
+        testFile.getParentFile().mkdirs();
+        FileWriter writer = new FileWriter(testFile);
+        writer.write("1000 Admin John Doe password123\n");
+        writer.write("1001 Cashier Jane Smith pass456\n");
+        writer.close();
+    }
+
+    @After
+    public void tearDown() {
+        // Clean up test files
+        new File(TEST_DATABASE).delete();
+        new File(TEST_TEMP).delete();
+    }
+
+    @Test
+    public void testGetEmployeeList() {
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertNotNull(employees);
+        assertEquals(2, employees.size());
+        assertEquals("1000", employees.get(0).getUsername());
+        assertEquals("1001", employees.get(1).getUsername());
+    }
+
+    @Test
+    public void testAddEmployee() {
+        employeeManagement.add("New Employee", "newpass", true);
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertEquals(3, employees.size());
+        assertEquals("1002", employees.get(2).getUsername());
+        assertEquals("Cashier", employees.get(2).getPosition());
+    }
+
+    @Test
+    public void testAddAdmin() {
+        employeeManagement.add("New Admin", "adminpass", false);
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertEquals(3, employees.size());
+        assertEquals("1002", employees.get(2).getUsername());
+        assertEquals("Admin", employees.get(2).getPosition());
+    }
+
+    @Test
+    public void testDeleteExistingEmployee() {
+        boolean result = employeeManagement.delete("1000");
+        assertTrue(result);
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertEquals(1, employees.size());
+        assertEquals("1001", employees.get(0).getUsername());
+    }
+
+    @Test
+    public void testDeleteNonExistingEmployee() {
+        boolean result = employeeManagement.delete("9999");
+        assertFalse(result);
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertEquals(2, employees.size());
+    }
+
+    @Test
+    public void testUpdateExistingEmployee() {
+        int result = employeeManagement.update("1000", "newpass", "Cashier", "John Updated");
+        assertEquals(0, result);
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        Employee updatedEmployee = employees.get(0);
+        assertEquals("newpass", updatedEmployee.getPassword());
+        assertEquals("Cashier", updatedEmployee.getPosition());
+        assertEquals("John Updated", updatedEmployee.getName());
+    }
+
+    @Test
+    public void testUpdateNonExistingEmployee() {
+        int result = employeeManagement.update("9999", "newpass", "Cashier", "Non Existent");
+        assertEquals(-1, result);
+    }
+
+    @Test
+    public void testUpdateWithInvalidPosition() {
+        int result = employeeManagement.update("1000", "newpass", "InvalidPosition", "John");
+        assertEquals(-2, result);
+    }
+
+    @Test
+    public void testUpdateWithEmptyFields() {
+        int result = employeeManagement.update("1000", "", "", "");
+        assertEquals(0, result);
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        Employee updatedEmployee = employees.get(0);
+        assertEquals("password123", updatedEmployee.getPassword());
+        assertEquals("Admin", updatedEmployee.getPosition());
+        assertEquals("John Doe", updatedEmployee.getName());
+    }
+
+    @Test
+    public void testUnixOSFlag() {
+        assertTrue(employeeManagement.unixOS);
+    }
+
+    // Additional tests to cover edge cases and increase coverage
+
+    @Test
+    public void testAddEmployeeWithFileIOException() {
+        // Make the database file read-only to simulate an IOException
+        new File(TEST_DATABASE).setReadOnly();
+        employeeManagement.add("IO Exception Test", "pass", true);
+        // The method should complete without throwing an exception
+        // Reset file permissions
+        new File(TEST_DATABASE).setWritable(true);
+    }
+
+    @Test
+    public void testDeleteEmployeeWithFileIOException() {
+        // Make the database file read-only to simulate an IOException
+        new File(TEST_DATABASE).setReadOnly();
+        boolean result = employeeManagement.delete("1000");
+        assertFalse(result);
+        // Reset file permissions
+        new File(TEST_DATABASE).setWritable(true);
+    }
+
+    @Test
+    public void testUpdateEmployeeWithFileIOException() {
+        // Make the database file read-only to simulate an IOException
+        new File(TEST_DATABASE).setReadOnly();
+        int result = employeeManagement.update("1000", "newpass", "Cashier", "John Updated");
+        assertEquals(0, result);
+        // The method should complete without throwing an exception
+        // Reset file permissions
+        new File(TEST_DATABASE).setWritable(true);
+    }
+}

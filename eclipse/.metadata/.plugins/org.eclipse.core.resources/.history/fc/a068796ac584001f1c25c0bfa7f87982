@@ -1,0 +1,17 @@
+import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
+public class ReturnItemTest {
+
+    @Test
+    public void testReturnItemInitialization() {
+        // Instantiate a new ReturnItem
+        ReturnItem itemToReturn = new ReturnItem(12345, 10);
+
+        // Validate the getItemID method
+        assertEquals(12345, itemToReturn.getItemID());
+
+        // Validate the getDays method
+        assertEquals(10, itemToReturn.getDays());
+    }
+}

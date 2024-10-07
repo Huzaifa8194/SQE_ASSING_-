@@ -1,0 +1,85 @@
+
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mockStatic;
+
+public class EmployeeManagementTest {
+
+    private EmployeeManagement employeeManagement;
+
+    @BeforeEach
+    void setUp() {
+        employeeManagement = new EmployeeManagement();
+        // Setting a temporary employee data for testing
+        employeeManagement.employees.add(new Employee("1", "John Doe", "Cashier", "password123"));
+    }
+
+    @Test void testGetEmployeeList() {
+        List<Employee> result = employeeManagement.getEmployeeList();
+        assertEquals(1, result.size());
+        assertEquals("John Doe", result.get(0).getName());
+    }
+
+    @Test
+    void testAddEmployee() {
+        employeeManagement.add("Jane Doe", "secure123", true);
+        assertEquals(2, employeeManagement.employees.size());
+        assertEquals("Jane Doe", employeeManagement.employees.get(1).getName());
+    }
+
+    @Test
+    void testDeleteEmployeeExists() {
+        assertTrue(employeeManagement.delete("1"));
+        assertTrue(employeeManagement.employees.isEmpty());
+    }
+
+    @Test void testDeleteEmployeeDoesNotExist() {
+        assertFalse(employeeManagement.delete("999"));
+    }
+
+    @Test void testUpdateEmployeeFound() {
+        int result = employeeManagement.update("1", "newpassword", "Admin", "John Smith");
+        assertEquals(0, result);
+        assertEquals("John Smith", employeeManagement.employees.get(0).getName());
+        assertEquals("newpassword", employeeManagement.employees.get(0).getPassword());
+        assertEquals("Admin", employeeManagement.employees.get(0).getPosition());
+    }
+
+    @Test
+    void testUpdateEmployeeNotFound() {
+        int result = employeeManagement.update("999", "newpassword", "Admin", "Unknown Person");
+        assertEquals(-1, result);
+    }
+
+    @Test
+    void testUpdateInvalidPosition() {
+        int result = employeeManagement.update("1", "newpassword", "Manager", "John Doe");
+        assertEquals(-2, result);
+    }
+
+    @Test
+    void testFileOperations() {
+        try (MockedStatic<Files> mockedFiles = mockStatic(Files.class);
+             MockedStatic<File> mockedFile = mockStatic(File.class)) {
+            BufferedWriter writer = new BufferedWriter(new FileWriter("temp.txt"));
+            mockedFiles.when(() -> Files.newBufferedWriter(Path.of("temp.txt"))).thenReturn(writer);
+            employeeManagement.delete("1");
+            employeeManagement.update("1", "newpassword", "Cashier", "John Doe");
+
+            mockedFile.when(() -> new File(employeeManagement.temp).delete()).thenReturn(true);
+            assertTrue(new File(employeeManagement.temp).delete());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}

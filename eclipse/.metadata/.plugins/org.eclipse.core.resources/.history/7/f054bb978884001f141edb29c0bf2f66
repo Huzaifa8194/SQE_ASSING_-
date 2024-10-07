@@ -1,0 +1,110 @@
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class POSTest {
+    private POS pos;
+    private Inventory mockInventory;
+    private Item item1;
+    private Item item2;
+
+    @Before
+    public void setUp() {
+        pos = new POS();
+        mockInventory = Inventory.getInstance();
+        pos.databaseItem = new ArrayList<>();
+        item1 = new Item(1, "Apple", 1.0f, 10);
+        item2 = new Item(2, "Orange", 2.0f, 10);
+        pos.databaseItem.add(item1);
+        pos.databaseItem.add(item2);
+    }
+
+    // Tests for the Item class
+
+    @Test
+    public void testItemCreation() {
+        assertEquals(1, item1.getItemID());
+        assertEquals("Apple", item1.getItemName());
+        assertEquals(1.0f, item1.getPrice(), 0.001);
+        assertEquals(10, item1.getAmount());
+    }
+
+    @Test
+    public void testUpdateItemAmount() {
+        item1.updateAmount(20);
+        assertEquals(20, item1.getAmount());
+    }
+
+    // Tests for POS functionality with Items
+
+    @Test
+    public void testEnterItem_Found() {
+        boolean result = pos.enterItem(1, 2);
+        assertTrue(result);
+        assertEquals(2, pos.getCart().get(0).getAmount());
+    }
+
+    @Test
+    public void testEnterItem_NotFound() {
+        boolean result = pos.enterItem(99, 2); // invalid item ID
+        assertFalse(result);
+    }
+
+    @Test
+    public void testUpdateTotal() {
+        pos.enterItem(1, 2); // Apple
+        pos.enterItem(2, 3); // Orange
+        double total = pos.updateTotal();
+        assertEquals(8.0, total, 0.001); // 2 Apples + 3 Oranges = 8.0
+    }
+
+    @Test
+    public void testRemoveItems_ItemExists() {
+        pos.enterItem(1, 2);
+        assertTrue(pos.removeItems(1));
+        assertEquals(0, pos.getCartSize());
+    }
+
+    @Test
+    public void testRemoveItems_ItemNotExists() {
+        pos.enterItem(1, 2);
+        assertFalse(pos.removeItems(99)); // invalid item ID
+        assertEquals(1, pos.getCartSize());
+    }
+
+    @Test
+    public void testCoupon_Valid() {
+        pos.enterItem(1, 2);
+        boolean valid = pos.coupon("VALID_COUPON");
+        assertTrue(valid);
+        assertEquals(1.8, pos.getTotal(), 0.001); // assuming 10% discount
+    }
+
+    @Test
+    public void testCoupon_Invalid() {
+        pos.enterItem(1, 2);
+        boolean valid = pos.coupon("INVALID_COUPON");
+        assertFalse(valid);
+        assertEquals(2.0, pos.getTotal(), 0.001); // no discount applied
+    }
+
+    @Test
+    public void testCreditCard_Valid() {
+        assertTrue(pos.creditCard("1234567890123456"));
+    }
+
+    @Test
+    public void testCreditCard_InvalidLength() {
+        assertFalse(pos.creditCard("123")); // too short
+    }
+
+    @Test
+    public void testCreditCard_InvalidCharacters() {
+        assertFalse(pos.creditCard("1234abcd5678efgh")); // invalid characters
+    }
+}

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="CSE216" default="default" basedir="." xmlns:ivy="ant:org.apache.ivy.ant">
+    <description>Builds, tests, and runs the project CSE216.</description>
+    
+    <path id="ivy.path">
+        <fileset dir="lib">
+            <include name="ivy.jar"/>
+        </fileset>
+    </path>
+    
+    <taskdef name="ivy:retrieve" classname="org.apache.ivy.ant.IvyAntTask" classpathref="ivy.path"/>
+    <taskdef name="ivy:settings" classname="org.apache.ivy.ant.IvyAntTask" classpathref="ivy.path"/>
+    
+    <property name="ivy.settings.file" value="ivysettings.xml"/>
+    
+    <target name="resolve">
+        <ivy:settings file="${ivy.settings.file}"/>
+        <ivy:retrieve pattern="lib/[artifact]-[revision].[ext]" />
+    </target>
+    
+    <import file="nbproject/build-impl.xml"/>
+</project>

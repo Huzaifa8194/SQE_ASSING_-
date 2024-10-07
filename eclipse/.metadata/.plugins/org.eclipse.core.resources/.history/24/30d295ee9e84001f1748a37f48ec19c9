@@ -1,0 +1,166 @@
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.io.*;
+import java.util.*;
+
+public class PointOfSaleTest {
+
+    private PointOfSaleTestHelper pos;
+    private final String COUPON_TEST_FILE = "test_couponNumber.txt";
+    private final String TEMP_TEST_FILE = "test_temp.txt";
+    private final String DATABASE_TEST_FILE = "test_database.txt";
+
+    private class PointOfSaleTestHelper extends PointOfSale {
+        @Override
+        public double endPOS(String file) {
+            return totalPrice;
+        }
+
+        @Override
+        public void deleteTempItem(int id) {
+            // Test implementation
+        }
+
+        @Override
+        public void retrieveTemp(String file) {
+            // Test implementation
+        }
+    }
+
+    @Before
+    public void init() {
+        pos = new PointOfSaleTestHelper();
+        pos.tempFile = TEMP_TEST_FILE;
+        pos.couponNumber = COUPON_TEST_FILE;
+    }
+
+    @After
+    public void cleanUp() {
+        new File(COUPON_TEST_FILE).delete();
+        new File(TEMP_TEST_FILE).delete();
+        new File(DATABASE_TEST_FILE).delete();
+    }
+
+    @Test
+    public void testInitializeNewTransaction() throws IOException {
+        createTestDatabaseFile();
+        assertTrue(pos.startNew(DATABASE_TEST_FILE));
+        assertEquals(2, pos.databaseItem.size());
+    }
+
+    @Test
+    public void testAddItemToTransaction() {
+        pos.databaseItem.add(new Item(1, "Item1", 10f, 5));
+        pos.databaseItem.add(new Item(2, "Item2", 20.0f, 3);
+
+        assertTrue(pos.enterItem(1, 2));
+        assertFalse(pos.enterItem(3, 1));
+        assertEquals(1, pos.transactionItem.size());
+    }
+
+    @Test
+    public void testCalculateTotalAmount() {
+        pos.transactionItem.add(new Item(1, "Item1", 10.0f, 2));
+        pos.transactionItem.add(new Item(2, "Item2", 20.0f, 1));
+        assertEquals(40.0, pos.updateTotal(), 0.001);
+    }
+
+    @Test
+    public void testApplyCoupon() throws IOException {
+        createTestCouponFile();
+        pos.totalPrice = 100.0;
+        assertTrue(pos.coupon("VALID10"));
+        assertEquals(90.0, pos.totalPrice, 0.001);
+        assertFalse(pos.coupon("INVALID"));
+    }
+
+    @Test
+    public void testGenerateTempFile() throws IOException {
+        pos.createTemp(1, 2);
+        List<String> lines = readFile(TEMP_TEST_FILE);
+        assertEquals("1 2", lines.get(0));
+    }
+
+    @Test
+    public void testRemoveItemFromTransaction() {
+        pos.transactionItem.add(new Item(1, "Item1", 10.0f, 2));
+        pos.transactionItem.add(new Item(2, "Item2", 20.0f, 1));
+        pos.totalPrice = 40.0;
+
+        assertTrue(pos.removeItems(1));
+        assertEquals(20.0, pos.totalPrice, 0.001);
+        assertEquals(1, pos.transactionItem.size());
+
+        assertFalse(pos.removeItems(3));
+    }
+
+    @Test
+    public void testFetchTotalPrice() {
+        pos.totalPrice = 50.0;
+        assertEquals(50.0, pos.getTotal(), 0.001);
+    }
+
+    @Test
+    public void testIdentifySystem() {
+        pos.detectSystem();
+        // System-dependent test; no assertion needed
+    }
+
+    @Test
+    public void testValidateCreditCard() {
+        assertTrue(pos.creditCard("1234567890123456"));
+        assertFalse(pos.creditCard("12345"));
+        assertFalse(pos.creditCard("1234567890abcdef"));
+    }
+
+    @Test
+    public void testFetchLastAddedItem() {
+        pos.transactionItem.add(new Item(1, "Item1", 10.0f, 2));
+        pos.transactionItem.add(new Item(2, "Item2", 20.0f, 1));
+        assertEquals(2, pos.lastAddedItem().getItemID());
+    }
+
+    @Test
+    public void testFetchCartItems() {
+        pos.transactionItem.add(new Item(1, "Item1", 10.0f, 2));
+        pos.transactionItem.add(new Item(2, "Item2", 20.0f, 1));
+        assertEquals(2, pos.getCart().size());
+    }
+
+    @Test
+    public void testFetchCartSize() {
+        pos.transactionItem.add(new Item(1, "Item1", 10.0f, 2));
+        pos.transactionItem.add(new Item(2, "Item2", 20.0f, 1));
+        assertEquals(2, pos.getCartSize());
+    }
+
+    private void createTestDatabaseFile() throws IOException {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(DATABASE_TEST_FILE))) {
+            writer.println("1,Item1,10.0,5");
+            writer.println("2,Item2,20.0,3");
+        }
+    }
+
+    private void createTestCouponFile() throws IOException {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(COUPON_TEST_FILE))) {
+            writer.println("VALID10");
+            writer.println("VALID20");
+        }
+    }
+
+    private List<String> readFile(String filename) {
+        List<String> lines = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return lines;
+    }
+}

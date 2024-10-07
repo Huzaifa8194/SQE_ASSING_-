@@ -1,0 +1,68 @@
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.util.List;
+
+public class EmployeeTest {
+    private EmployeeManagement employeeManagement;
+
+    @Before
+    public void setUp() {
+        employeeManagement = new EmployeeManagement();
+    }
+
+    @Test
+    public void testGetEmployeeList() {
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertNotNull(employees);
+    }
+
+    @Test
+    public void testAddEmployee() {
+        employeeManagement.add("John Doe", "password123", true);  // Adding employee
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertTrue(employees.size() > 0);
+    }
+
+    @Test
+    public void testAddAdmin() {
+        employeeManagement.add("Admin User", "adminpass", false);  // Adding admin
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertTrue(employees.size() > 0);
+    }
+
+    @Test
+    public void testDeleteEmployee() {
+        employeeManagement.add("John Doe", "password123", true);
+        boolean deleted = employeeManagement.delete("10001");
+        assertTrue(deleted);
+    }
+
+    @Test
+    public void testDeleteNonExistentEmployee() {
+        boolean deleted = employeeManagement.delete("99999");
+        assertFalse(deleted);
+    }
+
+    @Test
+    public void testUpdateEmployee() {
+        employeeManagement.add("John Doe", "password123", true);
+        int result = employeeManagement.update("10001", "newpass", "Admin", "John Updated");
+        assertEquals(0, result);
+    }
+
+    @Test
+    public void testUpdateInvalidPosition() {
+        employeeManagement.add("John Doe", "password123", true);
+        int result = employeeManagement.update("10001", "newpass", "InvalidPosition", "John Updated");
+        assertEquals(-2, result);
+    }
+
+    @Test
+    public void testReadFile() {
+        employeeManagement.getEmployeeList(); // This triggers the readFile
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertNotNull(employees);
+    }
+}

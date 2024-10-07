@@ -1,0 +1,106 @@
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.swing.JButton;
+import javax.swing.JOptionPane;
+
+public class LoginInterfaceTest {
+
+    private Login_Interface loginInterface;
+
+    @Before
+    public void setUp() {
+        // Initialize the Login_Interface before each test
+        loginInterface = new Login_Interface();
+    }
+
+    @Test
+    public void testLoginAsCashier() {
+        // Set valid credentials and simulate cashier login
+        loginInterface.username.setText("cashierUser");
+        loginInterface.password.setText("cashierPass");
+
+        // Simulate the logIn method behavior for cashier
+        loginInterface.System = new POSSystem() {
+            @Override
+            public int logIn(String username, String password) {
+                if (username.equals("cashierUser") && password.equals("cashierPass")) {
+                    return 1; // Cashier login
+                }
+                return 0; // Wrong credentials
+            }
+        };
+
+        // Simulate clicking the login button
+        loginInterface.loginButton.doClick();
+
+        // Verify that the login interface is disposed
+        assertFalse(loginInterface.isDisplayable());
+    }
+
+    @Test
+    public void testLoginAsAdmin() {
+        // Set valid credentials and simulate admin login
+        loginInterface.username.setText("adminUser");
+        loginInterface.password.setText("adminPass");
+
+        // Simulate the logIn method behavior for admin
+        loginInterface.System = new POSSystem() {
+            @Override
+            public int logIn(String username, String password) {
+                if (username.equals("adminUser") && password.equals("adminPass")) {
+                    return 2; // Admin login
+                }
+                return 0; // Wrong credentials
+            }
+        };
+
+        // Simulate clicking the login button
+        loginInterface.loginButton.doClick();
+
+        // Verify that the login interface is disposed
+        assertFalse(loginInterface.isDisplayable());
+    }
+
+    @Test
+    public void testLoginWithWrongCredentials() {
+        // Set invalid credentials
+        loginInterface.username.setText("wrongUser");
+        loginInterface.password.setText("wrongPass");
+
+        // Simulate the logIn method behavior for wrong credentials
+        loginInterface.System = new POSSystem() {
+            @Override
+            public int logIn(String username, String password) {
+                return 0; // Wrong credentials
+            }
+        };
+
+        // Capture the JOptionPane output
+        String[] message = new String[1];
+        System.setOut(new java.io.PrintStream(new java.io.OutputStream() {
+            @Override
+            public void write(int b) {
+                message[0] = String.valueOf(b);
+            }
+        }));
+
+        // Simulate clicking the login button
+        loginInterface.loginButton.doClick();
+
+        // Verify that the error dialog is shown
+        assertEquals("", loginInterface.username.getText());
+        assertEquals("", loginInterface.password.getText());
+        assertTrue(message[0].contains("Wrong Authentication Credentials"));
+    }
+
+    @Test
+    public void testExitButton() {
+        // Simulate clicking the exit button
+        loginInterface.exitButton.doClick();
+
+        // Verify that the login interface is disposed
+        assertFalse(loginInterface.isDisplayable());
+    }
+}

@@ -1,0 +1,172 @@
+import org.junit.Before;
+import org.junit.Test;
+import java.io.*;
+import java.util.Calendar;
+
+import static org.junit.Assert.*;
+
+public class POSSystemTest {
+
+    POSSystem posSystem;
+
+    @Before
+    public void setUp() {
+        posSystem = new POSSystem();
+    }
+
+    @Test
+    public void testReadFile_EmployeeDatabaseNotFound() {
+        // Testing for FileNotFoundException (no employeeDatabase.txt)
+        // Ensuring the method runs without crashing when the file is missing.
+        posSystem.readFile();
+        assertTrue(posSystem.employees.isEmpty()); // No employees should be added.
+    }
+
+    @Test
+    public void testLogInToFile_ValidLogIn() {
+        Calendar cal = Calendar.getInstance();
+        posSystem.logInToFile("john123", "John Doe", "Cashier", cal);
+        
+        // The test simply verifies that no exceptions are thrown and the file operations proceed smoothly.
+        // For more detailed verification, you could read back from the log file to check if the log entry is present.
+    }
+
+    @Test
+    public void testCheckTemp_FileExists() {
+        // Simulate the temp file existing
+        try {
+            File tempFile = new File("Database/temp.txt");
+            tempFile.getParentFile().mkdirs(); // Create necessary directories
+            tempFile.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        boolean result = posSystem.checkTemp();
+        assertTrue(result);
+    }
+
+    @Test
+    public void testCheckTemp_FileDoesNotExist() {
+        // Simulate the temp file NOT existing
+        File tempFile = new File("Database/temp.txt");
+        if (tempFile.exists()) {
+            tempFile.delete();
+        }
+
+        boolean result = posSystem.checkTemp();
+        assertFalse(result);
+    }
+
+    @Test
+    public void testContinueFromTemp_EmptyFile() {
+        // Simulate the temp file being empty
+        try {
+            File tempFile = new File("Database/temp.txt");
+            tempFile.createNewFile(); // Create an empty temp file
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String result = posSystem.continueFromTemp(1234567890L);
+        assertEquals("", result);
+    }
+
+    @Test
+    public void testContinueFromTemp_SaleType() {
+        // Simulate the temp file containing "Sale"
+        try {
+            File tempFile = new File("Database/temp.txt");
+            BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+            writer.write("Sale");
+            writer.newLine();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String result = posSystem.continueFromTemp(1234567890L);
+        assertEquals("Sale", result);
+    }
+
+    @Test
+    public void testContinueFromTemp_RentalType() {
+        // Simulate the temp file containing "Rental"
+        try {
+            File tempFile = new File("Database/temp.txt");
+            BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+            writer.write("Rental");
+            writer.newLine();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String result = posSystem.continueFromTemp(1234567890L);
+        assertEquals("Rental", result);
+    }
+
+    @Test
+    public void testContinueFromTemp_ReturnType() {
+        // Simulate the temp file containing "Return"
+        try {
+            File tempFile = new File("Database/temp.txt");
+            BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+            writer.write("Return");
+            writer.newLine();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String result = posSystem.continueFromTemp(1234567890L);
+        assertEquals("Return", result);
+    }
+
+    @Test
+    public void testLogOutToFile() {
+        // Testing that logging out doesn't throw any exceptions
+        Calendar cal = Calendar.getInstance();
+        posSystem.logOutToFile("john123", "John Doe", "Cashier", cal);
+    }
+
+    @Test
+    public void testLogOut() {
+        posSystem.logOut("Cashier");
+        // Ensuring the logOutToFile method is executed and doesn't throw exceptions.
+    }
+
+    @Test
+    public void testLogIn_ValidCredentials_Cashier() {
+        // Simulating login credentials that match a cashier
+        posSystem.employees.add(new Employee("john123", "John Doe", "password123", "Cashier"));
+        
+        int result = posSystem.logIn("john123", "password123");
+        assertEquals(1, result); // 1 = Cashier
+    }
+
+    @Test
+    public void testLogIn_ValidCredentials_Admin() {
+        // Simulating login credentials that match an admin
+        posSystem.employees.add(new Employee("admin456", "Admin User", "adminpass", "Admin"));
+        
+        int result = posSystem.logIn("admin456", "adminpass");
+        assertEquals(2, result); // 2 = Admin
+    }
+
+    @Test
+    public void testLogIn_InvalidPassword() {
+        // Simulating an incorrect password
+        posSystem.employees.add(new Employee("john123", "John Doe", "password123", "Cashier"));
+        
+        int result = posSystem.logIn("john123", "wrongpassword");
+        assertEquals(0, result); // 0 = invalid credentials
+    }
+
+    @Test
+    public void testLogIn_InvalidUsername() {
+        // Simulating a non-existing username
+        int result = posSystem.logIn("nonexistent", "password");
+        assertEquals(0, result); // 0 = invalid credentials
+    }
+}

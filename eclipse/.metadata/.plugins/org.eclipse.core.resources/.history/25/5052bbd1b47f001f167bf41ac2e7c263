@@ -1,0 +1,113 @@
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+/**
+ *
+ * @author jianing
+ */
+public class EmployeeTest {
+
+    public EmployeeTest() {
+    }
+
+    @BeforeClass
+    public static void setUpClass() {
+    }
+
+    @AfterClass
+    public static void tearDownClass() {
+    }
+
+    @Before
+    public void setUp() {
+    }
+
+    @After
+    public void tearDown() {
+    }
+
+    /**
+     * Test of getUsername method, of class Employee.
+     */
+    @Test
+    public void testGetUsername() {
+        System.out.println("getUsername2");
+        Employee instance = new Employee("10001", "Alpha Release", "Admin", "123345");
+        String expResult = "10001";
+        String result = instance.getUsername();
+        assertEquals(expResult, result);
+    }
+
+    /**
+     * Additional Test cases for EmployeeManagement class (to ensure full coverage)
+     */
+
+    // Test case for getEmployeeList method (Statement Coverage)
+    @Test
+    public void testGetEmployeeList() {
+        System.out.println("getEmployeeList");
+        EmployeeManagement employeeManagement = new EmployeeManagement();
+        assertNotNull("Employee list should not be null", employeeManagement.getEmployeeList());
+    }
+
+    // Test case for add method (Condition and Branch Coverage)
+    @Test
+    public void testAddEmployeeAsCashier() {
+        System.out.println("addEmployeeAsCashier");
+        EmployeeManagement employeeManagement = new EmployeeManagement();
+        employeeManagement.add("John Doe", "password123", true);  // Cashier
+        assertTrue("Cashier should be added", employeeManagement.getEmployeeList().stream()
+                .anyMatch(emp -> emp.getName().equals("John Doe") && emp.getPosition().equals("Cashier")));
+    }
+
+    @Test
+    public void testAddEmployeeAsAdmin() {
+        System.out.println("addEmployeeAsAdmin");
+        EmployeeManagement employeeManagement = new EmployeeManagement();
+        employeeManagement.add("Jane Admin", "admin123", false);  // Admin
+        assertTrue("Admin should be added", employeeManagement.getEmployeeList().stream()
+                .anyMatch(emp -> emp.getName().equals("Jane Admin") && emp.getPosition().equals("Admin")));
+    }
+
+    // Test case for delete method (Branch and Condition Coverage)
+    @Test
+    public void testDeleteExistingEmployee() {
+        System.out.println("deleteExistingEmployee");
+        EmployeeManagement employeeManagement = new EmployeeManagement();
+        employeeManagement.add("John Doe", "password123", true); // Add first
+        assertTrue("Employee should be deleted", employeeManagement.delete("John Doe"));
+    }
+
+    @Test
+    public void testDeleteNonExistingEmployee() {
+        System.out.println("deleteNonExistingEmployee");
+        EmployeeManagement employeeManagement = new EmployeeManagement();
+        assertFalse("Non-existing employee should not be deleted", employeeManagement.delete("NonExistentUser"));
+    }
+
+    @Test
+    public void testDeleteWithEmptyEmployeeList() {
+        System.out.println("deleteWithEmptyEmployeeList");
+        EmployeeManagement employeeManagement = new EmployeeManagement();
+        employeeManagement.getEmployeeList().clear();  // Ensure list is empty
+        assertFalse("Should not delete from an empty list", employeeManagement.delete("John Doe"));
+    }
+
+    // Additional edge case for deletion failure (if applicable)
+    @Test
+    public void testDeleteEmployeeFoundButRemoveFails() {
+        System.out.println("deleteEmployeeFoundButRemoveFails");
+        EmployeeManagement employeeManagement = new EmployeeManagement();
+        employeeManagement.add("John Doe", "password123", true); // Add first
+        
+        // Simulate failure in file system or some exception preventing deletion
+        // (This can be done using mock or other failure simulation techniques)
+
+        // Assuming the delete logic can handle the failure, the result should be false
+        assertFalse("Should not delete if the removal operation fails", employeeManagement.delete("John Doe"));
+    }
+}

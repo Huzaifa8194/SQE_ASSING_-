@@ -1,0 +1,86 @@
+import static org.junit.Assert.*;
+import javax.swing.JTextArea;
+import org.junit.Before;
+import org.junit.Test;
+
+public class EnterItem_InterfaceTest {
+
+    private EnterItem_Interface enterItemInterface;
+    private PointOfSale mockTransaction; // Replace with actual PointOfSale implementation
+    private JTextArea transactionDialog;
+    
+    @Before
+    public void setUp() {
+        mockTransaction = new POS(); // Initialize with an actual implementation
+        transactionDialog = new JTextArea();
+    }
+
+    @Test
+    public void testEnterItemSuccess() {
+        enterItemInterface = new EnterItem_Interface(mockTransaction, true, transactionDialog, "Sale", 1);
+        enterItemInterface.itemID.setText("1");
+        enterItemInterface.amount.setText("2");
+
+        // Assuming the item exists and is added successfully
+        boolean success = mockTransaction.enterItem(1, 2);
+        assertTrue(success);
+
+        enterItemInterface.enterButton.doClick(); // Simulate button click
+
+        // Verify if the transaction dialog is updated
+        String expected = "1\tItem Name \tx2\t$" + String.format("%.2f", 2 * 10.0) + "\n"; // Assuming price is 10.0
+        assertEquals(expected, transactionDialog.getText().trim());
+    }
+
+    @Test
+    public void testEnterItemNotFound() {
+        enterItemInterface = new EnterItem_Interface(mockTransaction, true, transactionDialog, "Sale", 1);
+        enterItemInterface.itemID.setText("999"); // Non-existing item ID
+        enterItemInterface.amount.setText("1");
+
+        // Simulate button click
+        enterItemInterface.enterButton.doClick();
+
+        // Check if the error dialog is shown (you would need to check for a dialog in a real implementation)
+        assertTrue( /* code to verify JOptionPane was shown */ );
+    }
+
+    @Test
+    public void testRemoveItemSuccess() {
+        enterItemInterface = new EnterItem_Interface(mockTransaction, false, transactionDialog, "Sale", 1);
+        enterItemInterface.itemID.setText("1");
+
+        // Assuming the item exists in the cart and is removed successfully
+        boolean success = mockTransaction.removeItems(1);
+        assertTrue(success);
+
+        enterItemInterface.enterButton.doClick(); // Simulate button click
+
+        // Verify if the transaction dialog is updated
+        String expected = ""; // Assuming item removed, dialog should be empty
+        assertEquals(expected, transactionDialog.getText().trim());
+    }
+
+    @Test
+    public void testRemoveItemNotInCart() {
+        enterItemInterface = new EnterItem_Interface(mockTransaction, false, transactionDialog, "Sale", 1);
+        enterItemInterface.itemID.setText("999"); // Non-existing item ID
+
+        // Simulate button click
+        enterItemInterface.enterButton.doClick();
+
+        // Check if the error dialog is shown (you would need to check for a dialog in a real implementation)
+        assertTrue( /* code to verify JOptionPane was shown */ );
+    }
+
+    @Test
+    public void testExitButton() {
+        enterItemInterface = new EnterItem_Interface(mockTransaction, true, transactionDialog, "Sale", 1);
+        
+        // Simulate exit button click
+        enterItemInterface.exitButton.doClick();
+        
+        // Verify if the interface is disposed
+        assertFalse(enterItemInterface.isShowing());
+    }
+}

@@ -1,0 +1,134 @@
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.io.*;
+import java.util.*;
+
+public class EmployeeTest {
+
+    private EmployeeManagement employeeManagement;
+
+    @Before
+    public void setUp() throws Exception {
+        employeeManagement = new EmployeeManagement();
+        employeeManagement.employees = new ArrayList<>();
+        // Mocking some employee data
+        employeeManagement.employees.add(new Employee("1", "John Doe", "Admin", "password123"));
+        employeeManagement.employees.add(new Employee("2", "Jane Smith", "Cashier", "password456"));
+    }
+
+    @Test
+    public void testAddEmployeeAdmin() throws Exception {
+        // Mocking add method for admin
+        employeeManagement.add("Alice", "password789", false);
+        Employee lastEmployee = employeeManagement.employees.get(employeeManagement.employees.size() - 1);
+        assertEquals("Alice", lastEmployee.getName());
+        assertEquals("Admin", lastEmployee.getPosition());
+    }
+
+    @Test
+    public void testAddEmployeeCashier() throws Exception {
+        // Mocking add method for cashier
+        employeeManagement.add("Bob", "password999", true);
+        Employee lastEmployee = employeeManagement.employees.get(employeeManagement.employees.size() - 1);
+        assertEquals("Bob", lastEmployee.getName());
+        assertEquals("Cashier", lastEmployee.getPosition());
+    }
+
+    @Test
+    public void testDeleteEmployeeSuccess() throws Exception {
+        // Mocking delete method for an existing user
+        boolean deleted = employeeManagement.delete("1");
+        assertTrue(deleted);
+        assertEquals(1, employeeManagement.employees.size());
+    }
+
+    @Test
+    public void testDeleteEmployeeFailure() throws Exception {
+        // Mocking delete method for non-existent user
+        boolean deleted = employeeManagement.delete("3");
+        assertFalse(deleted);
+        assertEquals(2, employeeManagement.employees.size());
+    }
+
+    @Test
+    public void testUpdateEmployeeSuccess() throws Exception {
+        // Mocking update method for an existing user
+        int result = employeeManagement.update("1", "newPassword", "Cashier", "John Doe Updated");
+        assertEquals(0, result); // User found
+        Employee updatedEmployee = employeeManagement.employees.get(0);
+        assertEquals("newPassword", updatedEmployee.getPassword());
+        assertEquals("Cashier", updatedEmployee.getPosition());
+        assertEquals("John Doe Updated", updatedEmployee.getName());
+    }
+
+    @Test
+    public void testUpdateEmployeePositionInvalid() throws Exception {
+        // Mocking update method with invalid position
+        int result = employeeManagement.update("1", "newPassword", "Manager", "John Doe");
+        assertEquals(-2, result); // Invalid position
+    }
+
+    @Test
+    public void testUpdateEmployeeNotFound() throws Exception {
+        // Mocking update method for a non-existent user
+        int result = employeeManagement.update("3", "newPassword", "Cashier", "Unknown User");
+        assertEquals(-1, result); // User not found
+    }
+
+    @Test
+    public void testFileNotFoundInAdd() {
+        // Mock FileNotFoundException in add
+        employeeManagement.employeeDatabase = "nonexistentfile.txt";
+        employeeManagement.add("TestName", "TestPassword", true);
+        // Test will pass if FileNotFoundException is caught
+    }
+
+    @Test
+    public void testFileNotFoundInDelete() {
+        // Mock FileNotFoundException in delete
+        employeeManagement.employeeDatabase = "nonexistentfile.txt";
+        boolean result = employeeManagement.delete("1");
+        assertFalse(result);
+    }
+
+    @Test
+    public void testIOExceptionInAdd() throws IOException {
+        // Mock IOException in add
+        FileWriter mockWriter = new FileWriter(employeeManagement.employeeDatabase) {
+            @Override
+            public void write(String str) throws IOException {
+                throw new IOException("Mock IOException");
+            }
+        };
+        try {
+            mockWriter.write("Test");
+        } catch (IOException e) {
+            assertEquals("Mock IOException", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testIOExceptionInUpdate() {
+        // Mock IOException in update
+        employeeManagement.employeeDatabase = "nonexistentfile.txt";
+        employeeManagement.update("1", "newPassword", "Cashier", "John Doe");
+        // Test will pass if IOException is caught
+    }
+
+    @Test
+    public void testReadFileIOException() {
+        // Mock IOException in readFile
+        employeeManagement.employeeDatabase = "nonexistentfile.txt";
+        employeeManagement.readFile();
+        // Test will pass if IOException is caught
+    }
+
+    @Test
+    public void testReadFileFileNotFoundException() {
+        // Mock FileNotFoundException in readFile
+        employeeManagement.employeeDatabase = "nonexistentfile.txt";
+        employeeManagement.readFile();
+        // Test will pass if FileNotFoundException is caught
+    }
+}

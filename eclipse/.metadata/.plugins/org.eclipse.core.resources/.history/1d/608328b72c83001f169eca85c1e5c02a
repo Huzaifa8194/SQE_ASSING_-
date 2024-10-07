@@ -1,0 +1,131 @@
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+
+public class EmployeeManagementTest {
+    
+    private EmployeeManagement empMgmt;
+
+    @BeforeEach
+    public void setUp() {
+        empMgmt = new EmployeeManagement();
+        // Clear the database before each test
+        try {
+            Files.deleteIfExists(Paths.get(EmployeeManagement.employeeDatabase));
+            Files.createFile(Paths.get(EmployeeManagement.employeeDatabase));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testAddEmployee() {
+        empMgmt.add("John Doe", "password123", true);
+        List<Employee> employees = empMgmt.getEmployeeList();
+        assertEquals(1, employees.size());
+        assertEquals("John Doe", employees.get(0).getName());
+        assertEquals("1", employees.get(0).getUsername());
+        assertEquals("Cashier", employees.get(0).getPosition());
+    }
+
+    @Test
+    public void testAddMultipleEmployees() {
+        empMgmt.add("Alice Smith", "pass1", true);
+        empMgmt.add("Bob Johnson", "pass2", false);
+        List<Employee> employees = empMgmt.getEmployeeList();
+        assertEquals(2, employees.size());
+        assertEquals("Alice Smith", employees.get(0).getName());
+        assertEquals("1", employees.get(0).getUsername());
+        assertEquals("Cashier", employees.get(0).getPosition());
+        assertEquals("Bob Johnson", employees.get(1).getName());
+        assertEquals("2", employees.get(1).getUsername());
+        assertEquals("Admin", employees.get(1).getPosition());
+    }
+
+    @Test
+    public void testDeleteEmployee() {
+        empMgmt.add("Jane Doe", "password123", true);
+        assertTrue(empMgmt.delete("1"));
+        List<Employee> employees = empMgmt.getEmployeeList();
+        assertEquals(0, employees.size());
+    }
+
+    @Test
+    public void testDeleteNonExistentEmployee() {
+        assertFalse(empMgmt.delete("999")); // trying to delete a non-existent employee
+    }
+
+    @Test
+    public void testUpdateEmployee() {
+        empMgmt.add("Tom Brown", "oldpass", true);
+        assertEquals(0, empMgmt.update("1", "newpass", "Admin", "Tom Brown"));
+        List<Employee> employees = empMgmt.getEmployeeList();
+        assertEquals("newpass", employees.get(0).getPassword());
+        assertEquals("Admin", employees.get(0).getPosition());
+    }
+
+    @Test
+    public void testUpdateNonExistentEmployee() {
+        assertEquals(-1, empMgmt.update("999", "pass", "Cashier", "Nonexistent"));
+    }
+
+    @Test
+    public void testUpdateWithInvalidPosition() {
+        empMgmt.add("Alice Cooper", "validPass", true);
+        assertEquals(-2, empMgmt.update("1", "newPass", "InvalidPosition", "Alice Cooper"));
+    }
+
+    @Test
+    public void testReadFileWithEmptyDatabase() {
+        empMgmt.readFile();
+        List<Employee> employees = empMgmt.getEmployeeList();
+        assertEquals(0, employees.size()); // Ensure it's empty after reading
+    }
+
+    @Test
+    public void testReadFileNonExistent() {
+        empMgmt = new EmployeeManagement();
+        empMgmt.employeeDatabase = "non_existent_file.txt"; // set to a non-existent file
+        assertThrows(FileNotFoundException.class, () -> {
+            empMgmt.readFile();
+        });
+    }
+
+    @Test
+    public void testGetEmployeeListAfterAdding() {
+        empMgmt.add("Charlie Chaplin", "password", true);
+        List<Employee> employees = empMgmt.getEmployeeList();
+        assertEquals(1, employees.size());
+        assertEquals("Charlie Chaplin", employees.get(0).getName());
+    }
+
+    @Test
+    public void testDeleteLastEmployee() {
+        empMgmt.add("Diana Prince", "password", true);
+        empMgmt.delete("1"); // Delete last employee
+        List<Employee> employees = empMgmt.getEmployeeList();
+        assertEquals(0, employees.size());
+    }
+
+    @Test
+    public void testAddEmployeeWithExistingUsername() {
+        empMgmt.add("John Doe", "password123", true);
+        empMgmt.add("John Doe", "password123", true); // Same name, should increment username
+        List<Employee> employees = empMgmt.getEmployeeList();
+        assertEquals(2, employees.size());
+        assertEquals("2", employees.get(1).getUsername()); // Ensure username is incremented
+    }
+
+    @AfterEach
+    public void tearDown() {
+        // Cleanup code if necessary
+        try {
+            Files.deleteIfExists(Paths.get(EmployeeManagement.employeeDatabase));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}

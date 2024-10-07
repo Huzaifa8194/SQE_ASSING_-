@@ -1,0 +1,135 @@
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+/**
+ * Test class for Employee.
+ * Covers all methods and conditions.
+ */
+public class EmployeeTest {
+
+    Employee employee;
+
+    public EmployeeTest() {
+    }
+
+    @BeforeClass
+    public static void setUpClass() {
+    }
+
+    @AfterClass
+    public static void tearDownClass() {
+    }
+
+    @Before
+    public void setUp() {
+        // Set up an Employee instance before each test
+        employee = new Employee("10001", "Alpha Release", "Admin", "123345");
+    }
+
+    @After
+    public void tearDown() {
+        // Cleanup after each test if needed
+    }
+
+    /**
+     * Test of getUsername method, of class Employee.
+     */
+    @Test
+    public void testGetUsername() {
+        System.out.println("Testing getUsername");
+        String expResult = "10001";
+        String result = employee.getUsername();
+        assertEquals(expResult, result);
+    }
+
+    /**
+     * Test of getName method, of class Employee.
+     */
+    @Test
+    public void testGetName() {
+        System.out.println("Testing getName");
+        String expResult = "Alpha Release";
+        String result = employee.getName();
+        assertEquals(expResult, result);
+    }
+
+    /**
+     * Test of getPosition method, of class Employee.
+     */
+    @Test
+    public void testGetPosition() {
+        System.out.println("Testing getPosition");
+        String expResult = "Admin";
+        String result = employee.getPosition();
+        assertEquals(expResult, result);
+    }
+
+    /**
+     * Test of getPassword method, of class Employee.
+     */
+    @Test
+    public void testGetPassword() {
+        System.out.println("Testing getPassword");
+        String expResult = "123345";
+        String result = employee.getPassword();
+        assertEquals(expResult, result);
+    }
+
+    /**
+     * Test of setName method, of class Employee.
+     */
+    @Test
+    public void testSetName() {
+        System.out.println("Testing setName");
+        String newName = "Beta Release";
+        employee.setName(newName);
+        assertEquals(newName, employee.getName());
+    }
+
+    /**
+     * Test of setPassword method, of class Employee.
+     */
+    @Test
+    public void testSetPassword() {
+        System.out.println("Testing setPassword");
+        String newPassword = "54321";
+        employee.setPassword(newPassword);
+        assertEquals(newPassword, employee.getPassword());
+    }
+
+    /**
+     * Test of setPosition method, of class Employee.
+     */
+    @Test
+    public void testSetPosition() {
+        System.out.println("Testing setPosition");
+        String newPosition = "Cashier";
+        employee.setPosition(newPosition);
+        assertEquals(newPosition, employee.getPosition());
+    }
+
+    /**
+     * Test of invalid position in setPosition method, of class Employee.
+     */
+    @Test
+    public void testSetPosition_Invalid() {
+        System.out.println("Testing setPosition with invalid value");
+        String invalidPosition = "InvalidPosition";
+        employee.setPosition(invalidPosition);
+        assertEquals(invalidPosition, employee.getPosition());
+    }
+
+    /**
+     * Test of setName with empty value, of class Employee.
+     */
+    @Test
+    public void testSetName_Empty() {
+        System.out.println("Testing setName with empty value");
+        employee.setName("");
+        assertEquals("", employee.getName());
+    }
+}

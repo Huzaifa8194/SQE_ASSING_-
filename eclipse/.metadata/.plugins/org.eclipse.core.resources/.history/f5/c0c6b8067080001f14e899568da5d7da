@@ -1,0 +1,113 @@
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.io.*;
+import java.util.List;
+
+public class EmployeeTest {
+    private EmployeeManagement employeeManagement;
+
+    @Before
+    public void setUp() {
+        employeeManagement = new EmployeeManagement();
+        // Clear the employee database before each test
+        clearDatabase();
+    }
+
+    private void clearDatabase() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(EmployeeManagement.employeeDatabase))) {
+            writer.write("");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testAddEmployee() {
+        employeeManagement.add("John Doe", "password123", true);
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertEquals(1, employees.size());
+        assertEquals("John Doe", employees.get(0).getName());
+        assertEquals("Cashier", employees.get(0).getPosition());
+    }
+
+    @Test
+    public void testAddMultipleEmployees() {
+        employeeManagement.add("John Doe", "password123", true);
+        employeeManagement.add("Jane Smith", "password456", false);
+        
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertEquals(2, employees.size());
+        assertEquals("Jane Smith", employees.get(1).getName());
+        assertEquals("Admin", employees.get(1).getPosition());
+    }
+
+    @Test
+    public void testDeleteEmployee() {
+        employeeManagement.add("John Doe", "password123", true);
+        boolean deleted = employeeManagement.delete("1"); // Assuming "1" is the username
+        
+        assertTrue(deleted);
+        assertEquals(0, employeeManagement.getEmployeeList().size());
+    }
+
+    @Test
+    public void testDeleteNonExistentEmployee() {
+        boolean deleted = employeeManagement.delete("nonexistent");
+        assertFalse(deleted);
+    }
+
+    @Test
+    public void testUpdateEmployee() {
+        employeeManagement.add("John Doe", "password123", true);
+        int result = employeeManagement.update("1", "newpassword", "Admin", "John Smith");
+        
+        assertEquals(0, result);
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertEquals("Admin", employees.get(0).getPosition());
+        assertEquals("John Smith", employees.get(0).getName());
+    }
+
+    @Test
+    public void testUpdateNonExistentEmployee() {
+        int result = employeeManagement.update("nonexistent", "newpassword", "Admin", "John Smith");
+        assertEquals(-1, result);
+    }
+
+    @Test
+    public void testUpdateWithInvalidPosition() {
+        employeeManagement.add("John Doe", "password123", true);
+        int result = employeeManagement.update("1", "newpassword", "InvalidPosition", "John Smith");
+        assertEquals(-2, result);
+    }
+
+    @Test
+    public void testReadFileFileNotFound() {
+        // Set employeeDatabase to a non-existent file
+        employeeManagement.employeeDatabase = "invalid/path/to/database.txt";
+        employeeManagement.readFile();
+        
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertEquals(0, employees.size());
+    }
+
+    @Test
+    public void testReadFileIOException() {
+        // Simulate an IOException scenario
+        // Implement logic to create a file that throws IOException on reading
+        // This is just a conceptual test
+        employeeManagement.employeeDatabase = "path/to/some/locked/file.txt";
+        employeeManagement.readFile();
+        
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertEquals(0, employees.size());
+    }
+
+    @Test
+    public void testGetEmployeeList() {
+        employeeManagement.add("John Doe", "password123", true);
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        
+        assertEquals(1, employees.size());
+    }
+}

@@ -1,0 +1,209 @@
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.*;
+import java.util.Calendar;
+
+import static org.junit.Assert.*;
+
+public class POSSystemTest {
+
+    POSSystem posSystem;
+
+    @Before
+    public void setUp() {
+        posSystem = new POSSystem();
+    }
+
+    @Test
+    public void testReadFile_EmployeeDatabaseNotFound() {
+        // Testing for FileNotFoundException (no employeeDatabase.txt)
+        posSystem.readFile(); // Tries to read a file that doesn't exist
+        assertTrue(posSystem.employees.isEmpty()); // No employees should be added.
+    }
+
+    @Test
+    public void testLogInToFile_ValidLogIn() {
+        Calendar cal = Calendar.getInstance();
+        posSystem.logInToFile("john123", "John Doe", "Cashier", cal);
+        // Verifying file interaction. Ideally, we would check the actual file, but this checks the no-exception flow.
+    }
+
+    @Test
+    public void testCheckTemp_FileExists() {
+        // Simulate the temp file existing
+        try {
+            File tempFile = new File("Database/temp.txt");
+            tempFile.getParentFile().mkdirs(); // Create necessary directories
+            tempFile.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        boolean result = posSystem.checkTemp();
+        assertTrue(result); // The file exists, should return true
+    }
+
+    @Test
+    public void testCheckTemp_FileDoesNotExist() {
+        // Simulate the temp file NOT existing
+        File tempFile = new File("Database/temp.txt");
+        if (tempFile.exists()) {
+            tempFile.delete();
+        }
+
+        boolean result = posSystem.checkTemp();
+        assertFalse(result); // The file doesn't exist, should return false
+    }
+
+    @Test
+    public void testContinueFromTemp_EmptyFile() {
+        // Simulate the temp file being empty
+        try {
+            File tempFile = new File("Database/temp.txt");
+            tempFile.createNewFile(); // Create an empty temp file
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String result = posSystem.continueFromTemp(1234567890L);
+        assertEquals("", result); // The temp file is empty, so it should return ""
+    }
+
+    @Test
+    public void testContinueFromTemp_SaleType() {
+        // Simulate the temp file containing "Sale"
+        try {
+            File tempFile = new File("Database/temp.txt");
+            BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+            writer.write("Sale");
+            writer.newLine();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String result = posSystem.continueFromTemp(1234567890L);
+        assertEquals("Sale", result); // It should return "Sale"
+    }
+
+    @Test
+    public void testContinueFromTemp_RentalType() {
+        // Simulate the temp file containing "Rental"
+        try {
+            File tempFile = new File("Database/temp.txt");
+            BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+            writer.write("Rental");
+            writer.newLine();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String result = posSystem.continueFromTemp(1234567890L);
+        assertEquals("Rental", result); // It should return "Rental"
+    }
+
+    @Test
+    public void testContinueFromTemp_ReturnType() {
+        // Simulate the temp file containing "Return"
+        try {
+            File tempFile = new File("Database/temp.txt");
+            BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+            writer.write("Return");
+            writer.newLine();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String result = posSystem.continueFromTemp(1234567890L);
+        assertEquals("Return", result); // It should return "Return"
+    }
+
+    @Test
+    public void testContinueFromTemp_InvalidType() {
+        // Simulate the temp file containing an invalid type
+        try {
+            File tempFile = new File("Database/temp.txt");
+            BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+            writer.write("InvalidType");
+            writer.newLine();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String result = posSystem.continueFromTemp(1234567890L);
+        assertEquals("", result); // Invalid type should return an empty string
+    }
+
+    @Test
+    public void testLogOutToFile() {
+        // Testing that logging out doesn't throw any exceptions
+        Calendar cal = Calendar.getInstance();
+        posSystem.logOutToFile("john123", "John Doe", "Cashier", cal);
+        // Verifying no exceptions during logout
+    }
+
+    @Test
+    public void testLogOut() {
+        posSystem.logOut("Cashier");
+        // Ensuring the logOutToFile method is executed and doesn't throw exceptions.
+    }
+
+    @Test
+    public void testLogIn_ValidCredentials_Cashier() {
+        // Simulating login credentials that match a cashier
+        posSystem.employees.add(new Employee("john123", "John Doe", "password123", "Cashier"));
+
+        int result = posSystem.logIn("john123", "password123");
+        assertEquals(1, result); // 1 = Cashier
+    }
+
+    @Test
+    public void testLogIn_ValidCredentials_Admin() {
+        // Simulating login credentials that match an admin
+        posSystem.employees.add(new Employee("admin456", "Admin User", "adminpass", "Admin"));
+
+        int result = posSystem.logIn("admin456", "adminpass");
+        assertEquals(2, result); // 2 = Admin
+    }
+
+    
+    @Test
+    public void testLogIn_UsernameNotFound() {
+        // Simulating an employee list with existing employees
+        posSystem.employees.add(new Employee("john123", "John Doe", "password123", "Cashier"));
+        posSystem.employees.add(new Employee("admin456", "Admin User", "adminpass", "Admin"));
+
+        // Attempt to log in with a non-existent username
+        int result = posSystem.logIn("nonexistentUser", "somepassword");
+
+        // Since the username isn't found, the `else` block in the `logIn` method will execute.
+        assertEquals(0, result); // 0 = username not found, hence the `else` block is triggered
+    }
+    
+    @Test
+    public void testLogIn_InvalidPassword() {
+        // Simulating an incorrect password
+        posSystem.employees.add(new Employee("john123", "John Doe", "password123", "Cashier"));
+
+        int result = posSystem.logIn("john123", "wrongpassword");
+        assertEquals(0, result); // 0 = invalid password
+    }
+
+    @Test
+    public void testLogIn_InvalidUsername() {
+        // Simulating a non-existing username
+        int result = posSystem.logIn("nonexistent", "password");
+        assertEquals(0, result); // 0 = invalid username
+    }
+
+    @Test
+    public void testLogIn_NoEmployees() {
+        // Simulating login attempt when there are no employees in the system
+        int result = posSystem.logIn("john123", "password123");
+        assertEquals(0, result); // 0 = no employees found
+    }
+}

@@ -1,0 +1,76 @@
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import java.util.List;
+
+public class EmployeeTest {
+
+    EmployeeManagement employeeManagement;
+
+    @BeforeEach
+    public void setUp() {
+        employeeManagement = new EmployeeManagement();
+    }
+
+    @Test
+    public void testGetEmployeeList() {
+        List<Employee> employeeList = employeeManagement.getEmployeeList();
+        assertNotNull(employeeList);
+    }
+
+    @Test
+    public void testAddEmployee_Cashier() {
+        employeeManagement.add("John Doe", "password123", true); // Add a Cashier
+        List<Employee> employeeList = employeeManagement.getEmployeeList();
+        assertEquals("Cashier", employeeList.get(employeeList.size() - 1).getPosition());
+    }
+
+    @Test
+    public void testAddEmployee_Admin() {
+        employeeManagement.add("Jane Doe", "password123", false); // Add an Admin
+        List<Employee> employeeList = employeeManagement.getEmployeeList();
+        assertEquals("Admin", employeeList.get(employeeList.size() - 1).getPosition());
+    }
+
+    @Test
+    public void testDeleteEmployee_Found() {
+        employeeManagement.add("John Doe", "password123", true); // Add a Cashier
+        List<Employee> employeeList = employeeManagement.getEmployeeList();
+        String username = employeeList.get(employeeList.size() - 1).getUsername();
+        assertTrue(employeeManagement.delete(username));
+    }
+
+    @Test
+    public void testDeleteEmployee_NotFound() {
+        assertFalse(employeeManagement.delete("nonexistentUser"));
+    }
+
+    @Test
+    public void testUpdateEmployee_Success() {
+        employeeManagement.add("John Doe", "password123", true); // Add a Cashier
+        List<Employee> employeeList = employeeManagement.getEmployeeList();
+        String username = employeeList.get(employeeList.size() - 1).getUsername();
+        
+        int result = employeeManagement.update(username, "newpassword", "Admin", "John Updated");
+        assertEquals(0, result);
+        assertEquals("Admin", employeeManagement.getEmployeeList().get(employeeList.size() - 1).getPosition());
+        assertEquals("newpassword", employeeManagement.getEmployeeList().get(employeeList.size() - 1).getPassword());
+        assertEquals("John Updated", employeeManagement.getEmployeeList().get(employeeList.size() - 1).getName());
+    }
+
+    @Test
+    public void testUpdateEmployee_Failure() {
+        int result = employeeManagement.update("nonexistentUser", "newpassword", "Admin", "John Updated");
+        assertEquals(-1, result);
+    }
+
+    @Test
+    public void testUpdateEmployee_InvalidPosition() {
+        employeeManagement.add("John Doe", "password123", true); // Add a Cashier
+        List<Employee> employeeList = employeeManagement.getEmployeeList();
+        String username = employeeList.get(employeeList.size() - 1).getUsername();
+        
+        int result = employeeManagement.update(username, "newpassword", "InvalidPosition", "John Updated");
+        assertEquals(-2, result); // Invalid position
+    }
+}

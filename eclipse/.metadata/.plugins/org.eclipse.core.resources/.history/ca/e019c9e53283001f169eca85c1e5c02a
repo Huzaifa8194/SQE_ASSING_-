@@ -1,0 +1,107 @@
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.*;
+import java.util.ArrayList;
+
+import static org.junit.Assert.*;
+
+public class EmployeeTest {
+
+    private EmployeeManagement employeeManagement;
+
+    @Before
+    public void setUp() throws Exception {
+        employeeManagement = new EmployeeManagement();
+        employeeManagement.employees = new ArrayList<>();
+        employeeManagement.employees.add(new Employee("1", "John Doe", "Admin", "password123"));
+        employeeManagement.employees.add(new Employee("2", "Jane Smith", "Cashier", "password456"));
+    }
+
+    @Test
+    public void testFileNotFoundInUpdate() {
+        // Force a FileNotFoundException when attempting to update
+        employeeManagement.employeeDatabase = "nonexistentfile.txt";
+        
+        // Simulate the behavior when reading from a file that does not exist
+        int result = employeeManagement.update("1", "newPassword", "Cashier", "John Doe Updated");
+        assertEquals(0, result); // Ensure update returns a valid result
+    }
+
+    @Test
+    public void testIOExceptionInUpdate() {
+        // Create a file that cannot be written to simulate IOException
+        employeeManagement.employeeDatabase = "readOnlyFile.txt"; // Simulating a read-only file scenario
+        
+        // Here, you can implement logic to simulate a file being read-only or similar
+        int result = employeeManagement.update("1", "newPassword", "Cashier", "John Doe Updated");
+        assertEquals(0, result); // Ensure update returns a valid result
+    }
+
+    @Test
+    public void testFileNotFoundInReadFile() {
+        // Force a FileNotFoundException in readFile method
+        employeeManagement.employeeDatabase = "nonexistentfile.txt";
+        try {
+            employeeManagement.readFile(); // This should handle the exception gracefully
+        } catch (FileNotFoundException e) {
+            // Expected exception
+            return;
+        }
+        fail("FileNotFoundException should be caught.");
+    }
+
+    @Test
+    public void testIOExceptionInReadFile() {
+        // Simulate an IOException in readFile method
+        employeeManagement.employeeDatabase = "mockFile.txt"; // Simulating file that causes IOException
+        try {
+            employeeManagement.readFile(); // Modify the readFile method to throw IOException
+        } catch (IOException e) {
+            // Expected exception
+            return;
+        }
+        fail("IOException should be caught.");
+    }
+
+    @Test
+    public void testIOExceptionInAdd() {
+        // Force an IOException in add method
+        try {
+            employeeManagement.add("Alice", "password789", false); // Modify add to simulate IOException
+        } catch (IOException e) {
+            // Expected exception
+            return;
+        }
+        fail("IOException should be caught.");
+    }
+
+    @Test
+    public void testFileNotFoundInDelete() {
+        // Force a FileNotFoundException in delete method
+        employeeManagement.employeeDatabase = "nonexistentfile.txt";
+        boolean result = employeeManagement.delete("1");
+        assertFalse(result); // Ensure delete fails due to FileNotFoundException
+    }
+
+    @Test
+    public void testDeleteNonExistentUser() {
+        // Ensure delete returns false for a non-existent user
+        boolean result = employeeManagement.delete("3");
+        assertFalse(result);
+    }
+
+    @Test
+    public void testUpdateWithInvalidPosition() {
+        // Ensure update fails with an invalid position
+        int result = employeeManagement.update("1", "newPassword", "InvalidPosition", "John Doe");
+        assertEquals(-2, result); // Invalid position should return -2
+    }
+
+    @Test
+    public void testUpdateUserNotFound() {
+        // Ensure update fails when user is not found
+        int result = employeeManagement.update("3", "newPassword", "Cashier", "Unknown User");
+        assertEquals(-1, result); // User not found should return -1
+    }
+}

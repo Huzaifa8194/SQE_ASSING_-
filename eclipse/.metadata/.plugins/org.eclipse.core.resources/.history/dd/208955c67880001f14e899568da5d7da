@@ -1,0 +1,75 @@
+import static org.junit.Assert.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.BufferedWriter;
+import java.io.IOException;
+
+public class EmployeeTest {
+    private EmployeeManagement empManager;
+
+    @Before
+    public void setUp() {
+        empManager = new EmployeeManagement();
+        // Create a test database file
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(empManager.employeeDatabase, true));
+            writer.write("1 Cashier JohnDoe password123\n");
+            writer.write("2 Admin JaneDoe password456\n");
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @After
+    public void tearDown() {
+        // Clean up test database file
+        File file = new File(empManager.employeeDatabase);
+        if (file.exists()) {
+            file.delete();
+        }
+    }
+
+    @Test
+    public void testGetEmployeeList() {
+        assertEquals(2, empManager.getEmployeeList().size());
+    }
+
+    @Test
+    public void testAddEmployee() {
+        empManager.add("Alice", "pass789", true);
+        assertEquals(3, empManager.getEmployeeList().size());
+        assertEquals("Alice", empManager.getEmployeeList().get(2).getName());
+    }
+
+    @Test
+    public void testDeleteEmployee() {
+        assertTrue(empManager.delete("1")); // Deleting existing employee
+        assertEquals(1, empManager.getEmployeeList().size());
+        assertFalse(empManager.delete("3")); // Deleting non-existing employee
+    }
+
+    @Test
+    public void testUpdateEmployee() {
+        int result = empManager.update("1", "newPassword", "Cashier", "John Smith");
+        assertEquals(0, result); // User found
+        assertEquals("newPassword", empManager.getEmployeeList().get(0).getPassword());
+        assertEquals("John Smith", empManager.getEmployeeList().get(0).getName());
+        
+        result = empManager.update("1", "", "Manager", ""); // Invalid position
+        assertEquals(-2, result);
+        
+        result = empManager.update("3", "pass", "Cashier", ""); // User not found
+        assertEquals(-1, result);
+    }
+    
+    @Test
+    public void testReadFile() {
+        empManager.readFile();
+        assertEquals(2, empManager.getEmployeeList().size());
+        assertEquals("JohnDoe", empManager.getEmployeeList().get(0).getUsername());
+    }
+}

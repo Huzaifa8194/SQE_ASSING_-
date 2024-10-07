@@ -1,0 +1,91 @@
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.*;
+import java.util.ArrayList;
+
+import static org.junit.Assert.*;
+
+public class EmployeeTest {
+
+    private EmployeeManagement employeeManagement;
+
+    @Before
+    public void setUp() {
+        employeeManagement = new EmployeeManagement();
+        employeeManagement.employees = new ArrayList<>();
+        employeeManagement.employees.add(new Employee("1", "John Doe", "Admin", "password123"));
+        employeeManagement.employees.add(new Employee("2", "Jane Smith", "Cashier", "password456"));
+    }
+
+    @Test
+    public void testFileNotFoundInUpdate() {
+        // Set up a non-existent file
+        employeeManagement.employeeDatabase = "nonexistentfile.txt";
+
+        // Directly call the method that should handle FileNotFoundException
+        int result = employeeManagement.update("1", "newPassword", "Cashier", "John Doe Updated");
+        assertEquals(0, result); // Ensure update returns a valid result
+    }
+
+    @Test
+    public void testIOExceptionInUpdate() {
+        // Simulate an IOException in the update process
+        employeeManagement.employeeDatabase = "mockFile.txt";
+
+        // Directly call the method that should handle IOException
+        int result = employeeManagement.update("1", "newPassword", "Cashier", "John Doe Updated");
+        assertEquals(0, result); // Ensure update returns a valid result
+    }
+
+    @Test
+    public void testFileNotFoundInReadFile() {
+        // Set up a non-existent file
+        employeeManagement.employeeDatabase = "nonexistentfile.txt";
+        employeeManagement.readFile(); // Call readFile method directly
+    }
+
+    @Test
+    public void testIOExceptionInReadFile() {
+        // Simulate an IOException in readFile method
+        employeeManagement.employeeDatabase = "mockFile.txt";
+        employeeManagement.readFile(); // Call readFile method directly
+    }
+
+    @Test
+    public void testIOExceptionInAdd() {
+        // Simulate an IOException in add method
+       
+            employeeManagement.add("Alice", "password789", false);
+       
+    }
+
+    @Test
+    public void testFileNotFoundInDelete() {
+        // Set up a non-existent file
+        employeeManagement.employeeDatabase = "nonexistentfile.txt";
+        boolean result = employeeManagement.delete("1");
+        assertFalse(result); // Ensure delete fails due to FileNotFoundException
+    }
+
+    @Test
+    public void testDeleteNonExistentUser() {
+        // Mocking delete method for a non-existent user
+        boolean result = employeeManagement.delete("3");
+        assertFalse(result); // Ensure delete returns false for non-existent user
+    }
+
+    @Test
+    public void testUpdateWithInvalidPosition() {
+        // Ensure update fails with an invalid position
+        int result = employeeManagement.update("1", "newPassword", "InvalidPosition", "John Doe");
+        assertEquals(-2, result); // Invalid position should return -2
+    }
+
+    @Test
+    public void testUpdateUserNotFound() {
+        // Ensure update fails when user is not found
+        int result = employeeManagement.update("3", "newPassword", "Cashier", "Unknown User");
+        assertEquals(-1, result); // User not found should return -1
+    }
+}

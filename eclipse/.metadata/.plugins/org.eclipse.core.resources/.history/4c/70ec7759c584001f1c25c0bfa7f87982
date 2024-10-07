@@ -1,0 +1,116 @@
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class POSManagementTest {
+
+    private POS pointOfSale;
+    private static final String TEMP_FILE = "temp_test_file.txt";
+    private static final String DATABASE_FILE = "database_test_file.txt";
+    private static final String INVOICE_FILE = "sale_invoice_record.txt";
+
+    @Before
+    public void setUp() {
+        pointOfSale = new POS();
+        pointOfSale.tempFile = TEMP_FILE;
+    }
+
+    @After
+    public void tearDown() {
+        deleteFiles(TEMP_FILE, DATABASE_FILE, INVOICE_FILE);
+    }
+
+    @Test
+    public void shouldRemoveItemFromTemporaryList() throws IOException {
+        // Prepare temporary data
+        prepareTempFile();
+        pointOfSale.transactionItem = generateSampleItems();
+
+        // Execute deletion
+        pointOfSale.deleteTempItem(1);
+
+        // Validate remaining items
+        List<String> currentLines = readFile(TEMP_FILE);
+        assertEquals(2, currentLines.size());
+        assertEquals("Type", currentLines.get(0));
+        assertEquals("2 1", currentLines.get(1));
+    }
+
+    @Test
+    public void shouldCompleteTransactionSuccessfully() throws IOException {
+        // Arrange data
+        pointOfSale.transactionItem = generateSampleItems();
+        pointOfSale.totalPrice = 30.0;
+        pointOfSale.tax = 1.1;
+        prepareDatabaseFile();
+
+        // Perform transaction completion
+        double totalAmount = pointOfSale.endPOS(DATABASE_FILE);
+
+        // Assert transaction results
+        assertEquals(33.0, totalAmount, 0.001);
+        assertTrue(pointOfSale.transactionItem.isEmpty());
+        assertTrue(pointOfSale.databaseItem.isEmpty());
+        assertFalse(new File(TEMP_FILE).exists());
+        assertTrue(new File(INVOICE_FILE).exists());
+    }
+
+    @Test
+    public void shouldLoadItemsFromTemporaryStorage() throws IOException {
+        // Set up temporary data
+        prepareTempFile();
+
+        // Load temporary items
+        pointOfSale.retrieveTemp(DATABASE_FILE);
+
+        // Assert loaded items
+        assertEquals(2, pointOfSale.transactionItem.size());
+        assertEquals(1, pointOfSale.transactionItem.get(0).getItemID());
+        assertEquals(2, pointOfSale.transactionItem.get(1).getItemID());
+    }
+
+    private void prepareTempFile() throws IOException {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(TEMP_FILE))) {
+            writer.println("Type");
+            writer.println("1 2");
+            writer.println("2 1");
+        }
+    }
+
+    private void prepareDatabaseFile() throws IOException {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(DATABASE_FILE))) {
+            writer.println("1,Item1,10.0,5");
+            writer.println("2,Item2,20.0,3");
+        }
+    }
+
+    private List<Item> generateSampleItems() {
+        List<Item> sampleItems = new ArrayList<>();
+        sampleItems.add(new Item(1, "Item1", 10f, 2));
+        sampleItems.add(new Item(2, "Item2", 20f, 1));
+        return sampleItems;
+    }
+
+    private List<String> readFile(String filename) throws IOException {
+        List<String> lines = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+            }
+        }
+        return lines;
+    }
+
+    private void deleteFiles(String... fileNames) {
+        for (String fileName : fileNames) {
+            new File(fileName).delete();
+        }
+    }
+}

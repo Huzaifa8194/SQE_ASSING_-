@@ -1,0 +1,138 @@
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.*;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class POHTest {
+
+    private POH poh;
+    private final String tempFilePath = "Database/newTemp.txt";
+    private final String returnSalePath = "Database/returnSale.txt";
+
+    @Before
+    public void setUp() {
+        poh = new POH(1234567890L); // Example phone number
+        poh.transactionItem.clear(); // Ensure the list is empty before each test
+    }
+
+    @Test
+    public void testDeleteTempItem_ItemExists() throws IOException {
+        // Arrange
+        poh.transactionItem.add(new ReturnItem(1, "Item1", 2, 20.0));
+        poh.transactionItem.add(new ReturnItem(2, "Item2", 1, 15.0));
+
+        // Create a temp file for testing
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFilePath))) {
+            writer.write("Type\n1234567890\n");
+            writer.write("1 2\n");
+            writer.write("2 1\n");
+        }
+
+        // Act
+        poh.deleteTempItem(1);
+
+        // Assert: Check if the file is updated correctly
+        try (BufferedReader reader = new BufferedReader(new FileReader(tempFilePath))) {
+            assertEquals("Type", reader.readLine());
+            assertEquals("1234567890", reader.readLine());
+            assertEquals("2 1", reader.readLine()); // Only Item2 should remain
+        }
+    }
+
+    @Test
+    public void testDeleteTempItem_ItemDoesNotExist() throws IOException {
+        // Arrange
+        poh.transactionItem.add(new ReturnItem(1, "Item1", 2, 20.0));
+
+        // Create a temp file for testing
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFilePath))) {
+            writer.write("Type\n1234567890\n");
+            writer.write("1 2\n");
+        }
+
+        // Act
+        poh.deleteTempItem(2); // ID that doesn't exist
+
+        // Assert: Check if the file is unchanged
+        try (BufferedReader reader = new BufferedReader(new FileReader(tempFilePath))) {
+            assertEquals("Type", reader.readLine());
+            assertEquals("1234567890", reader.readLine());
+            assertEquals("1 2", reader.readLine()); // Item1 should remain
+        }
+    }
+
+    @Test
+    public void testEndPOS_ReturnSaleTrue() throws IOException {
+        // Arrange
+        poh.returnSale = true;
+        poh.transactionItem.add(new ReturnItem(1, "Item1", 2, 20.0));
+
+        // Act
+        double total = poh.endPOS("someTextFile.txt");
+
+        // Assert: Check if the return sale was logged
+        try (BufferedReader reader = new BufferedReader(new FileReader(returnSalePath))) {
+            assertEquals("1 Item1 2 40.0", reader.readLine().trim());
+        }
+        // Check total price
+        assertTrue(total > 0);
+    }
+
+    @Test
+    public void testEndPOS_ReturnSaleFalse() {
+        // Arrange
+        poh.returnSale = false;
+        poh.transactionItem.add(new ReturnItem(1, "Item1", 2, 20.0));
+
+        // Act
+        double total = poh.endPOS("someTextFile.txt");
+
+        // Assert: Check that no total price is calculated
+        assertEquals(0.0, total, 0.001);
+    }
+
+    @Test
+    public void testRetrieveTemp() throws IOException {
+        // Arrange
+        String tempData = "Type\n1234567890\n1 2\n2 3\n";
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFilePath))) {
+            writer.write(tempData);
+        }
+
+        // Act
+        poh.retrieveTemp("someTextFile.txt");
+
+        // Assert: Verify items are entered correctly
+        assertEquals(2, poh.transactionItem.size());
+        assertEquals(1, poh.transactionItem.get(0).getItemID());
+        assertEquals(2, poh.transactionItem.get(0).getAmount());
+        assertEquals(2, poh.transactionItem.get(1).getItemID());
+        assertEquals(3, poh.transactionItem.get(1).getAmount());
+    }
+
+    @Test
+    public void testRetrieveTemp_FileNotFound() {
+        // Act & Assert: FileNotFoundException should be caught and handled
+        try {
+            poh.retrieveTemp("nonExistingFile.txt");
+        } catch (Exception e) {
+            assertTrue(e instanceof FileNotFoundException);
+        }
+    }
+
+    @After
+    public void tearDown() {
+        // Clean up temp files after each test
+        File tempFile = new File(tempFilePath);
+        if (tempFile.exists()) {
+            tempFile.delete();
+        }
+        File returnSaleFile = new File(returnSalePath);
+        if (returnSaleFile.exists()) {
+            returnSaleFile.delete();
+        }
+    }
+}

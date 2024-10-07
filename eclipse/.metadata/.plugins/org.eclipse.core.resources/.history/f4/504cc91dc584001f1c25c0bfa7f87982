@@ -1,0 +1,110 @@
+import org.junit.Before;
+import org.junit.After;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class PORTest {
+
+    private POR porInstance;
+    private final String TEMP_FILE_PATH = "test_temp.txt";
+    private final String DATABASE_FILE_PATH = "test_database.txt";
+
+    @Before
+    public void init() {
+        porInstance = new POR(1234567890L);
+        porInstance.tempFile = TEMP_FILE_PATH;
+    }
+
+    @After
+    public void cleanup() {
+        new File(TEMP_FILE_PATH).delete();
+        new File(DATABASE_FILE_PATH).delete();
+    }
+
+    @Test
+    public void testRemoveTemporaryItem() throws IOException {
+        // Prepare
+        createTempFileForTesting();
+        porInstance.transactionItem = createSampleTransactionItems();
+
+        // Execute
+        porInstance.deleteTempItem(1);
+
+        // Assert
+        List<String> remainingContents = readFileContents(TEMP_FILE_PATH);
+        assertEquals(3, remainingContents.size());
+        assertEquals("Type", remainingContents.get(0));
+        assertEquals("1234567890", remainingContents.get(1));
+        assertEquals("2 1", remainingContents.get(2));
+    }
+
+    @Test
+    public void testFinalizePOS() throws IOException {
+        // Prepare
+        porInstance.transactionItem = createSampleTransactionItems();
+        porInstance.totalPrice = 30.0;
+        porInstance.tax = 1.1;
+        createDatabaseFileForTesting();
+
+        // Execute
+        double finalAmount = porInstance.endPOS(DATABASE_FILE_PATH);
+
+        // Assert
+        assertEquals(33.0, finalAmount, 0.001);
+        assertTrue(porInstance.transactionItem.isEmpty());
+        assertTrue(porInstance.databaseItem.isEmpty());
+        assertFalse(new File(TEMP_FILE_PATH).exists());
+    }
+
+    @Test
+    public void testLoadTemporaryData() throws IOException {
+        // Prepare
+        createTempFileForTesting();
+
+        // Execute
+        porInstance.retrieveTemp(DATABASE_FILE_PATH);
+
+        // Assert
+        assertEquals(2, porInstance.transactionItem.size());
+        assertEquals(1, porInstance.transactionItem.get(0).getItemID());
+        assertEquals(2, porInstance.transactionItem.get(1).getItemID());
+    }
+
+    private void createTempFileForTesting() throws IOException {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(TEMP_FILE_PATH))) {
+            writer.println("Type");
+            writer.println("1234567890");
+            writer.println("1 2");
+            writer.println("2 1");
+        }
+    }
+
+    private void createDatabaseFileForTesting() throws IOException {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(DATABASE_FILE_PATH))) {
+            writer.println("1,Item1,10.0,5");
+            writer.println("2,Item2,20.0,3");
+        }
+    }
+
+    private List<Item> createSampleTransactionItems() {
+        List<Item> items = new ArrayList<>();
+        items.add(new Item(1, "Item1", 10f, 2));
+        items.add(new Item(2, "Item2", 20f, 1));
+        return items;
+    }
+
+    private List<String> readFileContents(String filename) throws IOException {
+        List<String> lines = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+            }
+        }
+        return lines;
+    }
+}

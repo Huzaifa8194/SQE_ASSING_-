@@ -1,0 +1,141 @@
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.io.*;
+import java.util.ArrayList;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class EmployeeManagementTest {
+
+    private EmployeeManagement employeeManagement;
+    private FileReader mockFileReader;
+    private BufferedReader mockBufferedReader;
+    private BufferedWriter mockBufferedWriter;
+    private FileWriter mockFileWriter;
+
+    @Before
+    public void setUp() throws Exception {
+        employeeManagement = new EmployeeManagement();
+        employeeManagement.employees = new ArrayList<>();
+        employeeManagement.employees.add(new Employee("1", "John Doe", "Admin", "password123"));
+        employeeManagement.employees.add(new Employee("2", "Jane Smith", "Cashier", "password456"));
+
+        // Mocking file and IO classes for exception testing
+        mockFileReader = Mockito.mock(FileReader.class);
+        mockBufferedReader = Mockito.mock(BufferedReader.class);
+        mockBufferedWriter = Mockito.mock(BufferedWriter.class);
+        mockFileWriter = Mockito.mock(FileWriter.class);
+    }
+
+    @Test
+    public void testFileNotFoundInUpdate() {
+        // Force a FileNotFoundException when attempting to update
+        employeeManagement.employeeDatabase = "nonexistentfile.txt";
+        try {
+            FileReader mockReader = mock(FileReader.class);
+            when(mockReader.read()).thenThrow(new FileNotFoundException("Mock FileNotFoundException"));
+
+            int result = employeeManagement.update("1", "newPassword", "Cashier", "John Doe Updated");
+            assertEquals(0, result); // Ensure update returns a valid result
+
+        } catch (Exception e) {
+            fail("FileNotFoundException should be caught.");
+        }
+    }
+
+    @Test
+    public void testIOExceptionInUpdate() {
+        // Force an IOException when attempting to update
+        employeeManagement.employeeDatabase = "mockFile.txt";
+        try {
+            BufferedWriter mockWriter = mock(BufferedWriter.class);
+            doThrow(new IOException("Mock IOException")).when(mockWriter).write(anyString());
+
+            int result = employeeManagement.update("1", "newPassword", "Cashier", "John Doe Updated");
+            assertEquals(0, result); // Ensure update returns a valid result
+
+        } catch (Exception e) {
+            fail("IOException should be caught.");
+        }
+    }
+
+    @Test
+    public void testFileNotFoundInReadFile() {
+        // Force a FileNotFoundException in readFile method
+        employeeManagement.employeeDatabase = "nonexistentfile.txt";
+        try {
+            when(mockFileReader.read()).thenThrow(new FileNotFoundException("Mock FileNotFoundException"));
+            employeeManagement.readFile();
+
+        } catch (Exception e) {
+            fail("FileNotFoundException should be caught.");
+        }
+    }
+
+    @Test
+    public void testIOExceptionInReadFile() {
+        // Force an IOException in readFile method
+        employeeManagement.employeeDatabase = "mockFile.txt";
+        try {
+            when(mockBufferedReader.readLine()).thenThrow(new IOException("Mock IOException"));
+            employeeManagement.readFile();
+
+        } catch (Exception e) {
+            fail("IOException should be caught.");
+        }
+    }
+
+    @Test
+    public void testIOExceptionInAdd() {
+        // Force an IOException in add method
+        try {
+            BufferedWriter mockWriter = mock(BufferedWriter.class);
+            doThrow(new IOException("Mock IOException")).when(mockWriter).write(anyString());
+
+            employeeManagement.add("Alice", "password789", false);
+
+        } catch (Exception e) {
+            fail("IOException should be caught.");
+        }
+    }
+
+    @Test
+    public void testFileNotFoundInDelete() {
+        // Force a FileNotFoundException in delete method
+        employeeManagement.employeeDatabase = "nonexistentfile.txt";
+        try {
+            FileReader mockReader = mock(FileReader.class);
+            when(mockReader.read()).thenThrow(new FileNotFoundException("Mock FileNotFoundException"));
+
+            boolean result = employeeManagement.delete("1");
+            assertFalse(result); // Ensure delete fails due to FileNotFoundException
+
+        } catch (Exception e) {
+            fail("FileNotFoundException should be caught.");
+        }
+    }
+
+    @Test
+    public void testDeleteNonExistentUser() {
+        // Mocking delete method for a non-existent user
+        boolean result = employeeManagement.delete("3");
+        assertFalse(result); // Ensure delete returns false for non-existent user
+    }
+
+    @Test
+    public void testUpdateWithInvalidPosition() {
+        // Ensure update fails with an invalid position
+        int result = employeeManagement.update("1", "newPassword", "InvalidPosition", "John Doe");
+        assertEquals(-2, result); // Invalid position should return -2
+    }
+
+    @Test
+    public void testUpdateUserNotFound() {
+        // Ensure update fails when user is not found
+        int result = employeeManagement.update("3", "newPassword", "Cashier", "Unknown User");
+        assertEquals(-1, result); // User not found should return -1
+    }
+}

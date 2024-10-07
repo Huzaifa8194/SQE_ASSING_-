@@ -1,0 +1,129 @@
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+
+import org.junit.Before;
+import org.junit.Test;
+
+public class EnterItem_InterfaceTest {
+
+    private PointOfSale mockTransaction;
+    private JTextArea mockTextArea;
+    private EnterItem_Interface enterItemInterface;
+
+    @Before
+    public void setUp() {
+        mockTransaction = mock(PointOfSale.class);
+        mockTextArea = new JTextArea();
+        enterItemInterface = new EnterItem_Interface(mockTransaction, true, mockTextArea, "Sale", 0);
+    }
+
+    @Test
+    public void testEnterButton_AddItem_Success() {
+        // Set input values
+        enterItemInterface.itemID.setText("123");
+        enterItemInterface.amount.setText("1");
+
+        // Mocking the transaction behavior
+        when(mockTransaction.enterItem(123, 1)).thenReturn(true);
+        when(mockTransaction.getTotal()).thenReturn(10.0);
+
+        // Simulate button press
+        enterItemInterface.enterButton.doClick();
+
+        // Verify interactions
+        verify(mockTransaction).enterItem(123, 1);
+        verify(mockTransaction).updateTotal();
+        assertEquals("123\tItem Name \tx1\t$10.00\n\nTotal: $10.00\n", mockTextArea.getText());
+    }
+
+    @Test
+    public void testEnterButton_AddItem_Failure() {
+        // Set input values
+        enterItemInterface.itemID.setText("123");
+        enterItemInterface.amount.setText("1");
+
+        // Mocking the transaction behavior for failure
+        when(mockTransaction.enterItem(123, 1)).thenReturn(false);
+
+        // Simulate button press
+        enterItemInterface.enterButton.doClick();
+
+        // Verify interactions
+        verify(mockTransaction).enterItem(123, 1);
+        assertEquals("", mockTextArea.getText()); // No items added
+        assertTrue(mockTextArea.getText().isEmpty());
+    }
+
+    @Test
+    public void testEnterButton_RemoveItem_Success() {
+        // Change to remove item
+        enterItemInterface.checkFlag = false; // Indicate we are removing items
+
+        // Set input values
+        enterItemInterface.itemID.setText("123");
+
+        // Mocking the transaction behavior
+        when(mockTransaction.removeItems(123)).thenReturn(true);
+        when(mockTransaction.getTotal()).thenReturn(10.0);
+
+        // Simulate button press
+        enterItemInterface.enterButton.doClick();
+
+        // Verify interactions
+        verify(mockTransaction).removeItems(123);
+        assertEquals("", mockTextArea.getText()); // Assume nothing in text area initially
+    }
+
+    @Test
+    public void testEnterButton_RemoveItem_Failure() {
+        // Change to remove item
+        enterItemInterface.checkFlag = false; // Indicate we are removing items
+
+        // Set input values
+        enterItemInterface.itemID.setText("123");
+
+        // Mocking the transaction behavior for failure
+        when(mockTransaction.removeItems(123)).thenReturn(false);
+
+        // Simulate button press
+        enterItemInterface.enterButton.doClick();
+
+        // Verify interactions
+        verify(mockTransaction).removeItems(123);
+        assertEquals("", mockTextArea.getText()); // No items removed
+    }
+
+    @Test
+    public void testExitButton() {
+        // Simulate button press
+        enterItemInterface.exitButton.doClick();
+        assertFalse(enterItemInterface.isDisplayable()); // Ensure the window is closed
+    }
+
+    @Test
+    public void testInvalidItemIDFormat() {
+        // Set an invalid Item ID
+        enterItemInterface.itemID.setText("abc"); // Not an integer
+
+        // Call getItemID
+        int itemId = enterItemInterface.getItemID();
+
+        // Check for failure
+        assertEquals(-1, itemId);
+    }
+
+    @Test
+    public void testInvalidAmountFormat() {
+        // Set an invalid amount
+        enterItemInterface.amount.setText("abc"); // Not an integer
+
+        // Call getAmount
+        int amount = enterItemInterface.getAmount();
+
+        // Check for failure
+        assertEquals(-1, amount);
+    }
+}

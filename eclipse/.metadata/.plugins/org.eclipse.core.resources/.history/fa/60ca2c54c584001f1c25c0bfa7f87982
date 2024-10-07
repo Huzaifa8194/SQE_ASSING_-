@@ -1,0 +1,111 @@
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class POSTest {
+
+    private POS pos;
+    private static final String TEMP_FILE_PATH = "test_temp.txt";
+    private static final String DATABASE_FILE_PATH = "test_database.txt";
+    private static final String INVOICE_FILE_PATH = "test_saleInvoiceRecord.txt";
+
+    @Before
+    public void initialize() {
+        pos = new POS();
+        pos.tempFile = TEMP_FILE_PATH;
+    }
+
+    @After
+    public void cleanUp() {
+        new File(TEMP_FILE_PATH).delete();
+        new File(DATABASE_FILE_PATH).delete();
+        new File(INVOICE_FILE_PATH).delete();
+    }
+
+    @Test
+    public void testRemoveTemporaryItem() throws IOException {
+        // Arrange
+        setUpTemporaryFile();
+        pos.transactionItem = createSampleTransactionItems();
+
+        // Act
+        pos.deleteTempItem(1);
+
+        // Assert
+        List<String> remainingLines = loadFileContent(TEMP_FILE_PATH);
+        assertEquals(2, remainingLines.size());
+        assertEquals("Type", remainingLines.get(0));
+        assertEquals("2 1", remainingLines.get(1));
+    }
+
+    @Test
+    public void testCompleteTransaction() throws IOException {
+        // Arrange
+        pos.transactionItem = createSampleTransactionItems();
+        pos.totalPrice = 30.0;
+        pos.tax = 1.1;
+        setUpDatabaseFile();
+
+        // Act
+        double finalAmount = pos.endPOS(DATABASE_FILE_PATH);
+
+        // Assert
+        assertEquals(33.0, finalAmount, 0.001);
+        assertTrue(pos.transactionItem.isEmpty());
+        assertTrue(pos.databaseItem.isEmpty());
+        assertFalse(new File(TEMP_FILE_PATH).exists());
+        assertTrue(new File(INVOICE_FILE_PATH).exists());
+    }
+
+    @Test
+    public void testLoadTemporaryItems() throws IOException {
+        // Arrange
+        setUpTemporaryFile();
+
+        // Act
+        pos.retrieveTemp(DATABASE_FILE_PATH);
+
+        // Assert
+        assertEquals(2, pos.transactionItem.size());
+        assertEquals(1, pos.transactionItem.get(0).getItemID());
+        assertEquals(2, pos.transactionItem.get(1).getItemID());
+    }
+
+    private void setUpTemporaryFile() throws IOException {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(TEMP_FILE_PATH))) {
+            writer.println("Type");
+            writer.println("1 2");
+            writer.println("2 1");
+        }
+    }
+
+    private void setUpDatabaseFile() throws IOException {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(DATABASE_FILE_PATH))) {
+            writer.println("1,Item1,10.0,5");
+            writer.println("2,Item2,20.0,3");
+        }
+    }
+
+    private List<Item> createSampleTransactionItems() {
+        List<Item> items = new ArrayList<>();
+        items.add(new Item(1, "Item1", 10f, 2));
+        items.add(new Item(2, "Item2", 20f, 1));
+        return items;
+    }
+
+    private List<String> loadFileContent(String filename) throws IOException {
+        List<String> lines = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+            }
+        }
+        return lines;
+    }
+}

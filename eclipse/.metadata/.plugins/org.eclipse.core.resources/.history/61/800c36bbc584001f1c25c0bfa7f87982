@@ -1,0 +1,168 @@
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.io.*;
+import java.util.*;
+
+public class ManagementTest {
+    private Management managementSystem;
+
+    @Before
+    public void setUp() {
+        managementSystem = new Management();
+    }
+
+    // Test if a user exists in the database
+    @Test
+    public void checkUser_ExistingUser() throws IOException {
+        FileWriter fileWriter = new FileWriter("Database/userDatabase.txt");
+        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+        bufferedWriter.write("PhoneNumber,Details\n1234567890,UserInfo\n");
+        bufferedWriter.close();
+
+        boolean userExists = managementSystem.checkUser(1234567890L);
+        assertTrue(userExists);
+    }
+
+    @Test
+    public void checkUser_NonExistingUser() throws IOException {
+        FileWriter fileWriter = new FileWriter("Database/userDatabase.txt");
+        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+        bufferedWriter.write("PhoneNumber,Details\n9876543210,OtherInfo\n");
+        bufferedWriter.close();
+
+        boolean userExists = managementSystem.checkUser(1234567890L);
+        assertFalse(userExists);
+    }
+
+    @Test
+    public void checkUser_FileNotAvailable() {
+        File dbFile = new File("Database/userDatabase.txt");
+        if (dbFile.exists()) {
+            dbFile.delete();
+        }
+
+        boolean result = managementSystem.checkUser(1234567890L);
+        assertTrue(result);  // Assuming default return in the case of missing file
+    }
+
+    // Test for retrieving outstanding returns
+    @Test
+    public void getLatestReturnDate_HasOutstandingReturns() throws IOException {
+        FileWriter writer = new FileWriter("Database/userDatabase.txt");
+        BufferedWriter bufferedWriter = new BufferedWriter(writer);
+        bufferedWriter.write("PhoneNumber,Returns\n1234567890,101,false 102,false\n");
+        bufferedWriter.close();
+
+        List<ReturnItem> outstandingReturns = managementSystem.getLatestReturnDate(1234567890L);
+        assertEquals(2, outstandingReturns.size());
+    }
+
+    @Test
+    public void getLatestReturnDate_NoOutstandingReturns() throws IOException {
+        FileWriter writer = new FileWriter("Database/userDatabase.txt");
+        BufferedWriter bufferedWriter = new BufferedWriter(writer);
+        bufferedWriter.write("PhoneNumber,Returns\n1234567890,101,true\n");
+        bufferedWriter.close();
+
+        List<ReturnItem> outstandingReturns = managementSystem.getLatestReturnDate(1234567890L);
+        assertTrue(outstandingReturns.isEmpty());
+    }
+
+    @Test
+    public void getLatestReturnDate_FileNotAvailable() {
+        File file = new File("Database/userDatabase.txt");
+        if (file.exists()) {
+            file.delete();
+        }
+
+        List<ReturnItem> outstandingReturns = managementSystem.getLatestReturnDate(1234567890L);
+        assertTrue(outstandingReturns.isEmpty());
+    }
+
+    // Test for adding a user
+    @Test
+    public void createUser_NewEntry() throws IOException {
+        File file = new File("Database/userDatabase.txt");
+        if (file.exists()) {
+            file.delete();
+        }
+
+        boolean isUserCreated = managementSystem.createUser(1234567890L);
+        assertTrue(isUserCreated);
+
+        BufferedReader reader = new BufferedReader(new FileReader("Database/userDatabase.txt"));
+        boolean userFound = false;
+        String line;
+        while ((line = reader.readLine()) != null) {
+            if (line.contains("1234567890")) {
+                userFound = true;
+                break;
+            }
+        }
+        reader.close();
+        assertTrue(userFound);
+    }
+
+    @Test
+    public void createUser_FileAccessIssue() {
+        File dbFile = new File("Database/userDatabase.txt");
+        dbFile.setReadOnly();
+
+        boolean isUserCreated = managementSystem.createUser(1234567890L);
+        assertFalse(isUserCreated);
+    }
+
+    // Test for adding a rental
+    @Test
+    public void addRental_UserExists() throws IOException {
+        FileWriter writer = new FileWriter("Database/userDatabase.txt");
+        BufferedWriter bufferedWriter = new BufferedWriter(writer);
+        bufferedWriter.write("PhoneNumber,Returns\n1234567890,101,true\n");
+        bufferedWriter.close();
+
+        List<Item> rentalItems = new ArrayList<>();
+        rentalItems.add(new Item(202, "item1", 1.0f, 10));
+        rentalItems.add(new Item(203, "item2", 1.0f, 15));
+
+        Management.addRental(1234567890L, rentalItems);
+
+        BufferedReader reader = new BufferedReader(new FileReader("Database/userDatabase.txt"));
+        boolean rentalAdded = false;
+        String line;
+        while ((line = reader.readLine()) != null) {
+            if (line.contains("202") && line.contains("203")) {
+                rentalAdded = true;
+                break;
+            }
+        }
+        reader.close();
+        assertTrue(rentalAdded);
+    }
+
+    // Test for updating rental status
+    @Test
+    public void updateRentalStatus_UserExists() throws IOException {
+        FileWriter writer = new FileWriter("Database/userDatabase.txt");
+        BufferedWriter bufferedWriter = new BufferedWriter(writer);
+        bufferedWriter.write("PhoneNumber,Returns\n1234567890,202,false\n");
+        bufferedWriter.close();
+
+        List<ReturnItem> returnItems = new ArrayList<>();
+        returnItems.add(new ReturnItem(202, 0));
+
+        managementSystem.updateRentalStatus(1234567890L, returnItems);
+
+        BufferedReader reader = new BufferedReader(new FileReader("Database/userDatabase.txt"));
+        boolean statusUpdated = false;
+        String line;
+        while ((line = reader.readLine()) != null) {
+            if (line.contains("true")) {
+                statusUpdated = true;
+                break;
+            }
+        }
+        reader.close();
+        assertTrue(statusUpdated);
+    }
+}

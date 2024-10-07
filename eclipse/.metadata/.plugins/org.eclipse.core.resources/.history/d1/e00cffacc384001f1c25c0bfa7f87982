@@ -1,0 +1,85 @@
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class InventoryTest {
+
+    private Inventory inventoryManager;
+    private List<Item> itemsDatabase; // Assuming Item is a class you've defined
+    private List<Item> rentalItems;
+
+    @Before
+    public void initialize() {
+        inventoryManager = Inventory.getInstance();
+        itemsDatabase = new ArrayList<>();
+        rentalItems = new ArrayList<>();
+    }
+
+    @Test
+    public void testInventoryAccessSuccessful() throws IOException {
+        // Create a temporary test file
+        String fileName = "tempDatabase.txt";
+        PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(fileName)));
+        writer.println("1 ItemA 10.0 5");
+        writer.println("2 ItemB 20.0 10");
+        writer.close();
+
+        // Verify inventory access
+        boolean isSuccess = inventoryManager.accessInventory(fileName, itemsDatabase);
+        assertTrue(isSuccess);
+        assertEquals(2, itemsDatabase.size()); // Check two items are read
+
+        // Cleanup
+        new File(fileName).delete();
+    }
+
+    @Test
+    public void testInventoryAccessFileNotFound() {
+        // Attempt to access a non-existent file
+        boolean isSuccess = inventoryManager.accessInventory("missingFile.txt", itemsDatabase);
+        assertFalse(isSuccess);
+        assertEquals(0, itemsDatabase.size()); // Check no items are read
+    }
+
+    @Test
+    public void testInventoryUpdateRental() {
+        // Setup test items
+        Item itemA = new Item(1, "ItemA", 10.0f, 5);
+        Item itemB = new Item(2, "ItemB", 20.0f, 10);
+        itemsDatabase.add(itemA);
+        itemsDatabase.add(itemB);
+
+        // Adding items for rental
+        rentalItems.add(new Item(1, "ItemA", 10.0f, 2)); // Renting 2 of ItemA
+
+        // Update inventory
+        inventoryManager.updateInventory("tempDatabase.txt", rentalItems, itemsDatabase, true);
+
+        // Confirm the inventory was modified correctly
+        assertEquals(3, itemsDatabase.get(0).getAmount()); // 5 - 2 = 3 for ItemA
+        assertEquals(10, itemsDatabase.get(1).getAmount()); // ItemB should be unchanged
+    }
+
+    @Test
+    public void testInventoryUpdateReturn() {
+        // Setup test items
+        Item itemA = new Item(1, "ItemA", 10.0f, 5);
+        Item itemB = new Item(2, "ItemB", 20.0f, 10);
+        itemsDatabase.add(itemA);
+        itemsDatabase.add(itemB);
+
+        // Adding items for return
+        rentalItems.add(new Item(1, "ItemA", 10.0f, 2)); // Returning 2 of ItemA
+
+        // Update inventory
+        inventoryManager.updateInventory("tempDatabase.txt", rentalItems, itemsDatabase, false);
+
+        // Confirm the inventory was modified correctly
+        assertEquals(7, itemsDatabase.get(0).getAmount()); // 5 + 2 = 7 for ItemA
+        assertEquals(10, itemsDatabase.get(1).getAmount()); // ItemB should be unchanged
+    }
+}

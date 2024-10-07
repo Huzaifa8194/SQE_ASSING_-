@@ -1,0 +1,88 @@
+import static org.junit.Assert.*;
+import java.awt.event.ActionEvent;
+import javax.swing.JButton;
+import org.junit.Before;
+import org.junit.Test;
+
+public class UpdateEmployee_InterfaceTest {
+
+    private UpdateEmployee_Interface updateEmployeeInterface;
+    private Admin_Interface adminMock;  // Simple mock without using libraries
+    private JButton enterButton;
+    private JButton exitButton;
+
+    @Before
+    public void setUp() {
+        adminMock = new Admin_Interface(new POSSystem()); // Mock of Admin_Interface
+        updateEmployeeInterface = new UpdateEmployee_Interface(adminMock);
+
+        // Accessing buttons for action simulation
+        enterButton = (JButton) TestUtils.getChildNamed(updateEmployeeInterface, "Enter");
+        exitButton = (JButton) TestUtils.getChildNamed(updateEmployeeInterface, "Exit");
+    }
+
+    @Test
+    public void testEnterButtonAction() {
+        // Simulating button click
+        ActionEvent enterEvent = new ActionEvent(enterButton, ActionEvent.ACTION_PERFORMED, "Enter");
+        updateEmployeeInterface.actionPerformed(enterEvent);
+        
+        // Checking the admin visibility change logic after action
+        assertFalse(adminMock.isVisible());
+    }
+
+    @Test
+    public void testExitButtonAction() {
+        // Simulating exit button click
+        ActionEvent exitEvent = new ActionEvent(exitButton, ActionEvent.ACTION_PERFORMED, "Exit");
+        updateEmployeeInterface.actionPerformed(exitEvent);
+        
+        // Checking if the current frame is hidden
+        assertFalse(updateEmployeeInterface.isVisible());
+    }
+
+    @Test
+    public void testInvalidUsername() {
+        // Set invalid data in text fields
+        TestUtils.setTextField(updateEmployeeInterface, "username", "non_existing_user");
+        TestUtils.setTextField(updateEmployeeInterface, "password", "password123");
+        TestUtils.setTextField(updateEmployeeInterface, "position", "Manager");
+        TestUtils.setTextField(updateEmployeeInterface, "name", "John Doe");
+
+        ActionEvent enterEvent = new ActionEvent(enterButton, ActionEvent.ACTION_PERFORMED, "Enter");
+        updateEmployeeInterface.actionPerformed(enterEvent);
+        
+        // No mock for EmployeeManagement, assume it returns -1
+        assertEquals("Employee with such username doesn't exist", TestUtils.getLastDialogMessage());
+    }
+
+    @Test
+    public void testInvalidPosition() {
+        // Set invalid position in text field
+        TestUtils.setTextField(updateEmployeeInterface, "username", "existing_user");
+        TestUtils.setTextField(updateEmployeeInterface, "password", "password123");
+        TestUtils.setTextField(updateEmployeeInterface, "position", "InvalidPosition");
+        TestUtils.setTextField(updateEmployeeInterface, "name", "John Doe");
+
+        ActionEvent enterEvent = new ActionEvent(enterButton, ActionEvent.ACTION_PERFORMED, "Enter");
+        updateEmployeeInterface.actionPerformed(enterEvent);
+        
+        // No mock for EmployeeManagement, assume it returns -2
+        assertEquals("Invalid employee position", TestUtils.getLastDialogMessage());
+    }
+
+    @Test
+    public void testValidEmployeeUpdate() {
+        // Set valid data
+        TestUtils.setTextField(updateEmployeeInterface, "username", "existing_user");
+        TestUtils.setTextField(updateEmployeeInterface, "password", "password123");
+        TestUtils.setTextField(updateEmployeeInterface, "position", "Manager");
+        TestUtils.setTextField(updateEmployeeInterface, "name", "John Doe");
+
+        ActionEvent enterEvent = new ActionEvent(enterButton, ActionEvent.ACTION_PERFORMED, "Enter");
+        updateEmployeeInterface.actionPerformed(enterEvent);
+        
+        // No mock for EmployeeManagement, assume it returns a valid result
+        assertFalse(updateEmployeeInterface.isVisible());
+    }
+}

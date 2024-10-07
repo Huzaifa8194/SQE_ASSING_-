@@ -1,0 +1,109 @@
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.*;
+
+public class POSTest {
+    
+    private POS pos;
+    private List<Item> mockDatabaseItems;
+    
+    @BeforeEach
+    public void setUp() {
+        pos = new POS();
+        mockDatabaseItems = new ArrayList<>();
+        
+        // Mocking database items for test cases
+        mockDatabaseItems.add(new Item(1, "Item1", 100.0, 5));
+        mockDatabaseItems.add(new Item(2, "Item2", 50.0, 10));
+        pos.databaseItem = mockDatabaseItems;
+    }
+    
+    @Test
+    public void testStartNew_Success() {
+        Inventory inventoryMock = Inventory.getInstance();
+        // Assume accessInventory is mocked or controlled
+        assertTrue(pos.startNew("mockDatabaseFile"));
+    }
+    
+    @Test
+    public void testStartNew_Failure() {
+        // Mocking inventory access failure
+        Inventory inventoryMock = Inventory.getInstance();
+        assertFalse(pos.startNew("nonExistentDatabaseFile"));
+    }
+    
+    @Test
+    public void testEnterItem_ItemFound() {
+        boolean result = pos.enterItem(1, 2);
+        assertTrue(result);
+        assertEquals(1, pos.getCartSize());
+        assertEquals(200.0, pos.getTotal());
+    }
+    
+    @Test
+    public void testEnterItem_ItemNotFound() {
+        boolean result = pos.enterItem(99, 2); // Item not in mock database
+        assertFalse(result);
+        assertEquals(0, pos.getCartSize());
+        assertEquals(0.0, pos.getTotal());
+    }
+
+    @Test
+    public void testRemoveItems_ItemExists() {
+        pos.enterItem(1, 1);
+        boolean result = pos.removeItems(1);
+        assertTrue(result);
+        assertEquals(0, pos.getCartSize());
+    }
+
+    @Test
+    public void testRemoveItems_ItemNotInTransaction() {
+        boolean result = pos.removeItems(99); // Item not in transaction
+        assertFalse(result);
+    }
+    
+    @Test
+    public void testCreditCard_Valid() {
+        assertTrue(pos.creditCard("1234567812345678"));
+    }
+    
+    @Test
+    public void testCreditCard_InvalidLength() {
+        assertFalse(pos.creditCard("1234"));
+    }
+
+    @Test
+    public void testCreditCard_InvalidCharacters() {
+        assertFalse(pos.creditCard("12345678abcd5678"));
+    }
+    
+    @Test
+    public void testCoupon_ValidCoupon() {
+        // Assume that coupon "DISCOUNT10" exists in couponNumber.txt
+        boolean result = pos.coupon("DISCOUNT10");
+        assertTrue(result);
+        assertEquals(0.9 * pos.getTotal(), pos.getTotal());
+    }
+    
+    @Test
+    public void testCoupon_InvalidCoupon() {
+        boolean result = pos.coupon("INVALIDCOUPON");
+        assertFalse(result);
+    }
+    
+    @Test
+    public void testEndPOS_EmptyTransaction() {
+        double total = pos.endPOS("mockDatabaseFile");
+        assertEquals(0.0, total);
+    }
+
+    @Test
+    public void testEndPOS_WithTransaction() {
+        pos.enterItem(1, 1);
+        pos.enterItem(2, 1);
+        double total = pos.endPOS("mockDatabaseFile");
+        assertEquals((100.0 + 50.0) * 1.06, total);
+    }
+}

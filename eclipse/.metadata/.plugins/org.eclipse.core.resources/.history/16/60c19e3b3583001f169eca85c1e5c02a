@@ -1,0 +1,91 @@
+import org.junit.*;
+import static org.junit.Assert.*;
+import java.awt.event.ActionEvent;
+import javax.swing.*;
+import java.lang.reflect.Field;
+
+public class AddEmployee_InterfaceTest {
+    private AddEmployee_Interface addEmployeeInterface;
+    private Admin_Interface mockAdminInterface;
+    private EmployeeManagement mockManagement;
+
+    @Before
+    public void setUp() {
+        mockAdminInterface = new Admin_Interface(new POSSystem());
+        mockManagement = new EmployeeManagement();
+        addEmployeeInterface = new AddEmployee_Interface(true, mockAdminInterface);
+        
+        // Replace the real EmployeeManagement with our mock
+        try {
+            Field managementField = AddEmployee_Interface.class.getDeclaredField("management");
+            managementField.setAccessible(true);
+            managementField.set(addEmployeeInterface, mockManagement);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            fail("Failed to set up mock EmployeeManagement");
+        }
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(addEmployeeInterface);
+        assertEquals("SG Technologies - Register Employee", addEmployeeInterface.getTitle());
+        assertEquals(520, addEmployeeInterface.getWidth());
+        assertEquals(200, addEmployeeInterface.getHeight());
+    }
+
+    @Test
+    public void testEnterButtonActionForCashier() {
+        JButton enterButton = (JButton) getPrivateField(addEmployeeInterface, "enterButton");
+        JTextField nameField = (JTextField) getPrivateField(addEmployeeInterface, "name");
+        JPasswordField passwordField = (JPasswordField) getPrivateField(addEmployeeInterface, "password");
+
+        nameField.setText("John Doe");
+        passwordField.setText("password123");
+
+        enterButton.doClick();
+
+        // Verify that the management.add method was called with correct parameters
+        // This would require modifying the EmployeeManagement mock to track calls
+        
+        assertFalse(addEmployeeInterface.isVisible());
+    }
+
+    @Test
+    public void testEnterButtonActionForAdmin() {
+        addEmployeeInterface = new AddEmployee_Interface(false, mockAdminInterface);
+        
+        JButton enterButton = (JButton) getPrivateField(addEmployeeInterface, "enterButton");
+        JTextField nameField = (JTextField) getPrivateField(addEmployeeInterface, "name");
+        JPasswordField passwordField = (JPasswordField) getPrivateField(addEmployeeInterface, "password");
+
+        nameField.setText("Jane Admin");
+        passwordField.setText("adminpass");
+
+        enterButton.doClick();
+
+        // Verify that the management.add method was called with correct parameters
+        // This would require modifying the EmployeeManagement mock to track calls
+        
+        assertFalse(addEmployeeInterface.isVisible());
+    }
+
+    @Test
+    public void testExitButtonAction() {
+        JButton exitButton = (JButton) getPrivateField(addEmployeeInterface, "exitButton");
+        
+        exitButton.doClick();
+        
+        assertFalse(addEmployeeInterface.isVisible());
+    }
+
+    private Object getPrivateField(Object obj, String fieldName) {
+        try {
+            Field field = obj.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(obj);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            fail("Failed to get private field: " + fieldName);
+            return null;
+        }
+    }
+}

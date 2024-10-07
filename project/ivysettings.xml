@@ -1,0 +1,6 @@
+<ivy-module version="2.0">
+    <info organisation="your.organisation" module="your.module" />
+    <configurations>
+        <conf name="default" visibility="public" />
+    </configurations>
+</ivy-module>

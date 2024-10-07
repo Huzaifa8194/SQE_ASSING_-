@@ -1,0 +1,85 @@
+import static org.junit.Assert.*;
+import java.awt.event.ActionEvent;
+import javax.swing.JButton;
+import org.junit.Before;
+import org.junit.Test;
+
+public class UpdateEmployee_InterfaceTest {
+
+    private UpdateEmployee_Interface updateEmployeeInterface;
+    private Admin_Interface adminMock;  // Simple mock-like object without libraries
+    private JButton enterButton;
+    private JButton exitButton;
+
+    @Before
+    public void setUp() {
+        // Initializing mock admin interface and UpdateEmployee_Interface
+        adminMock = new Admin_Interface(new POSSystem());
+        updateEmployeeInterface = new UpdateEmployee_Interface(adminMock);
+        
+        // Finding buttons by their order of addition in the UpdateEmployee_Interface
+        enterButton = (JButton) updateEmployeeInterface.getContentPane().getComponent(10); // Enter button index
+        exitButton = (JButton) updateEmployeeInterface.getContentPane().getComponent(11);  // Exit button index
+    }
+
+    @Test
+    public void testEnterButtonAction_withInvalidUsername() {
+        // Set invalid username and valid password/position/name
+        updateEmployeeInterface.username.setText("invalid_user");
+        updateEmployeeInterface.password.setText("password123");
+        updateEmployeeInterface.position.setText("Manager");
+        updateEmployeeInterface.name.setText("John Doe");
+
+        // Simulate the enter button click
+        ActionEvent enterEvent = new ActionEvent(enterButton, ActionEvent.ACTION_PERFORMED, "Enter");
+        updateEmployeeInterface.actionPerformed(enterEvent);
+
+        // Assume EmployeeManagement.update() would return -1 for invalid username
+        // Here, we check that JOptionPane shows the correct message for this scenario
+        // No direct way to check JOptionPane output without additional libraries, so we rely on visibility changes
+        assertFalse(updateEmployeeInterface.isVisible());
+    }
+
+    @Test
+    public void testEnterButtonAction_withInvalidPosition() {
+        // Set valid username/password/name but invalid position
+        updateEmployeeInterface.username.setText("valid_user");
+        updateEmployeeInterface.password.setText("password123");
+        updateEmployeeInterface.position.setText("InvalidPosition");
+        updateEmployeeInterface.name.setText("John Doe");
+
+        // Simulate the enter button click
+        ActionEvent enterEvent = new ActionEvent(enterButton, ActionEvent.ACTION_PERFORMED, "Enter");
+        updateEmployeeInterface.actionPerformed(enterEvent);
+
+        // Assume EmployeeManagement.update() would return -2 for invalid position
+        assertFalse(updateEmployeeInterface.isVisible());
+    }
+
+    @Test
+    public void testEnterButtonAction_withValidEmployeeUpdate() {
+        // Set all fields to valid values
+        updateEmployeeInterface.username.setText("valid_user");
+        updateEmployeeInterface.password.setText("password123");
+        updateEmployeeInterface.position.setText("Manager");
+        updateEmployeeInterface.name.setText("John Doe");
+
+        // Simulate the enter button click
+        ActionEvent enterEvent = new ActionEvent(enterButton, ActionEvent.ACTION_PERFORMED, "Enter");
+        updateEmployeeInterface.actionPerformed(enterEvent);
+
+        // Assuming the employee update succeeds (non-negative result)
+        assertFalse(updateEmployeeInterface.isVisible());
+        assertTrue(adminMock.isVisible());  // Admin should be set visible again
+    }
+
+    @Test
+    public void testExitButtonAction() {
+        // Simulate exit button click
+        ActionEvent exitEvent = new ActionEvent(exitButton, ActionEvent.ACTION_PERFORMED, "Exit");
+        updateEmployeeInterface.actionPerformed(exitEvent);
+
+        // Check that the frame is hidden
+        assertFalse(updateEmployeeInterface.isVisible());
+    }
+}

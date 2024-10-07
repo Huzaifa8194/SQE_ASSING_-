@@ -1,0 +1,126 @@
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class POHTest {
+    private POH poh;
+
+    // Sample transaction items for testing
+    private List<ReturnItem> sampleTransactionItems;
+
+    @Before
+    public void setUp() {
+        poh = new POH(1234567890); // Initialize POH with a phone number
+        sampleTransactionItems = new ArrayList<>();
+        
+        // Adding mock transaction items
+        sampleTransactionItems.add(new ReturnItem(1,15));
+        sampleTransactionItems.add(new ReturnItem(2, 15));
+       // poh.transactionItem = sampleTransactionItems; // Set transaction items directly
+    }
+
+    @Test
+    public void testDeleteTempItem() throws IOException {
+        // Arrange
+        // Create a temp file for testing
+        String tempFilePath = "Database/newTemp.txt";
+        BufferedWriter writer = new BufferedWriter(new FileWriter(tempFilePath));
+        writer.write("Type1\n");
+        writer.write("1234567890\n");
+        writer.write("1 2\n");
+        writer.write("2 1\n");
+        writer.close();
+
+        // Act
+        poh.deleteTempItem(2);
+
+        // Assert
+        BufferedReader reader = new BufferedReader(new FileReader(tempFilePath));
+        String line;
+        int count = 0;
+        while ((line = reader.readLine()) != null) {
+            count++;
+            // Ensure the line does not contain the deleted item
+            if (count == 1) assertEquals("Type1", line);
+            if (count == 2) assertEquals("1234567890", line);
+            if (count == 3) assertEquals("1 2", line);
+        }
+        reader.close();
+
+        // Clean up
+        new File(tempFilePath).delete();
+    }
+
+    @Test
+    public void testEndPOS_withReturnSale() throws IOException {
+        // Arrange
+        poh.returnSale = true; // Set returnSale to true
+        String textFile = "testEndPOS.txt"; // Sample text file name
+
+        // Act
+        double totalPrice = poh.endPOS(textFile);
+
+        // Assert
+        assertTrue(totalPrice > 0);
+        // Clean up: ensure the file is created
+        File file = new File("Database/returnSale.txt");
+        assertTrue(file.exists());
+        file.delete(); // Clean up after test
+    }
+
+    @Test
+    public void testRetrieveTemp() throws IOException {
+        // Arrange
+        String tempFilePath = "temp.txt";
+        BufferedWriter writer = new BufferedWriter(new FileWriter(tempFilePath));
+        writer.write("1234567890\n");
+        writer.write("1 2\n");
+        writer.write("2 1\n");
+        writer.close();
+
+        // Act
+        poh.retrieveTemp(tempFilePath);
+
+        // Assert
+        assertEquals(2, poh.transactionItem.size());
+        assertEquals(1, poh.transactionItem.get(0).getItemID());
+        assertEquals(2, poh.transactionItem.get(0).getAmount());
+        assertEquals(2, poh.transactionItem.get(1).getItemID());
+        assertEquals(1, poh.transactionItem.get(1).getAmount());
+
+        // Clean up
+        new File(tempFilePath).delete();
+    }
+
+    @Test
+    public void testConstructor() {
+        // Test default constructor
+        POH defaultPOH = new POH();
+        assertEquals(0, defaultPOH.phone);
+        
+        // Test constructor with phone
+        assertEquals(1234567890, poh.phone);
+    }
+
+    @Test
+    public void testHandleFileNotFoundExceptionInDeleteTempItem() {
+        // Act
+        poh.tempFile = "invalid_path.txt"; // Set an invalid path to trigger exception
+        poh.deleteTempItem(1); // Call method
+
+        // Assert no exceptions thrown (handled in the method)
+    }
+
+    @Test
+    public void testHandleIOExceptionInRetrieveTemp() {
+        // Act
+        poh.tempFile = "invalid_temp.txt"; // Set an invalid path to trigger exception
+        poh.retrieveTemp(poh.tempFile); // Call method
+
+        // Assert no exceptions thrown (handled in the method)
+    }
+}

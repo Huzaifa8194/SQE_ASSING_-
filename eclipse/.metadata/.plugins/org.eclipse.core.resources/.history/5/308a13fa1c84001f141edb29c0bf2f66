@@ -1,0 +1,126 @@
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.io.*;
+import java.util.List;
+
+public class PORTest {
+
+    private POR por;
+    private long phoneNum;
+    private String tempFilePath;
+
+    @Before
+    public void setUp() {
+        phoneNum = 1234567890L;
+        por = new POR(phoneNum);
+        tempFilePath = "Database/newTemp.txt"; // Adjust this path as necessary for your file system
+    }
+
+    @Test
+    public void testDeleteTempItem_Success() throws IOException {
+        // Setup: Create a temp file with dummy data
+        createTempFile("Type\n" + phoneNum + "\n1 2\n2 3\n");
+
+        // Act: Delete an item with ID 1
+        por.deleteTempItem(1);
+
+        // Assert: Check the contents of the temp file after deletion
+        List<String> lines = readLinesFromFile(tempFilePath);
+        assertEquals(2, lines.size()); // Should have the type and phoneNum lines
+        assertEquals("Type", lines.get(0)); // Check the type line
+        assertEquals(String.valueOf(phoneNum), lines.get(1)); // Check the phone number
+        assertEquals("2 3", lines.get(2)); // Ensure item with ID 1 is removed
+    }
+
+    @Test
+    public void testDeleteTempItem_FileNotFound() {
+        // Act & Assert: Expect a message indicating that the file cannot be opened
+        try {
+            por.deleteTempItem(1);
+            fail("Expected FileNotFoundException to be thrown");
+        } catch (Exception e) {
+            assertTrue(e instanceof FileNotFoundException);
+        }
+    }
+
+    @Test
+    public void testEndPOS_WithItems() {
+        // Setup: Add dummy items to transactionItem
+        Item item1 = new Item(1, "Item1", 10.0, 2);
+        Item item2 = new Item(2, "Item2", 20.0, 1);
+        por.transactionItem.add(item1);
+        por.transactionItem.add(item2);
+        por.tax = 0.1; // Setting a tax rate
+        double expectedTotal = (item1.getPrice() * item1.getAmount() + item2.getPrice() * item2.getAmount()) * (1 + por.tax);
+        
+        // Act
+        double total = por.endPOS(tempFilePath);
+        
+        // Assert
+        assertEquals(expectedTotal, total, 0.01);
+    }
+
+    @Test
+    public void testEndPOS_NoItems() {
+        // Act
+        double total = por.endPOS(tempFilePath);
+        
+        // Assert
+        assertEquals(0.0, total, 0.01);
+    }
+
+    @Test
+    public void testRetrieveTemp_Success() throws IOException {
+        // Setup: Create a temp file with dummy data
+        createTempFile("Type\n" + phoneNum + "\n1 2\n2 3\n");
+        
+        // Act: Retrieve temporary items
+        por.retrieveTemp(tempFilePath);
+        
+        // Assert: Check if items are correctly retrieved
+        assertEquals(2, por.transactionItem.size());
+        assertEquals(1, por.transactionItem.get(0).getItemID());
+        assertEquals(2, por.transactionItem.get(0).getAmount());
+        assertEquals(2, por.transactionItem.get(1).getItemID());
+        assertEquals(3, por.transactionItem.get(1).getAmount());
+    }
+
+    @Test
+    public void testRetrieveTemp_FileNotFound() {
+        // Act & Assert: Expect a message indicating that the file cannot be opened
+        try {
+            por.retrieveTemp("nonexistentfile.txt");
+            fail("Expected FileNotFoundException to be thrown");
+        } catch (Exception e) {
+            assertTrue(e instanceof FileNotFoundException);
+        }
+    }
+
+    @Test
+    public void testRetrieveTemp_ErrorReadingFile() throws IOException {
+        // Setup: Create a temp file that causes an error on reading (for testing purposes, this would typically involve more advanced techniques)
+        createTempFile("Type\n" + phoneNum + "\n1 2\n2 3\n");
+        File tempFile = new File(tempFilePath);
+        tempFile.setReadable(false); // Make the file unreadable
+
+        // Act & Assert: Expect an IOException to be thrown
+       
+            por.retrieveTemp(tempFilePath);
+            fail("Expected IOException to be thrown");
+       
+    }
+
+    // Helper methods for testing
+    private void createTempFile(String content) throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFilePath))) {
+            writer.write(content);
+        }
+    }
+
+    private List<String> readLinesFromFile(String filePath) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            return reader.lines().collect(Collectors.toList());
+        }
+    }
+}

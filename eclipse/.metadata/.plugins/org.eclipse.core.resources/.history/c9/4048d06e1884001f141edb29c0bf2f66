@@ -1,0 +1,114 @@
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.awt.event.ActionEvent;
+import javax.swing.JButton;
+
+public class Transaction_InterfaceTest {
+
+    private Transaction_Interface transactionInterface;
+    private JButton addItemButton;
+    private JButton removeItemButton;
+    private JButton endTransactionButton;
+    private JButton cancelTransactionButton;
+
+    @Before
+    public void setUp() {
+        // Set up Transaction_Interface for "Sale" operation
+        transactionInterface = new Transaction_Interface("Sale");
+
+        // Access buttons
+        addItemButton = transactionInterface.addItem;
+        removeItemButton = transactionInterface.removeItem;
+        endTransactionButton = transactionInterface.endTransaction;
+        cancelTransactionButton = transactionInterface.cancelTransaction;
+    }
+
+    @Test
+    public void testAddItemAction() {
+        // Simulate addItem button click
+        ActionEvent addItemEvent = new ActionEvent(addItemButton, ActionEvent.ACTION_PERFORMED, "Add Item");
+        transactionInterface.actionPerformed(addItemEvent);
+        // Verify add item dialog is displayed (enterItem interface logic)
+        assertTrue(transactionInterface.isVisible()); // or another condition depending on your UI flow
+    }
+
+    @Test
+    public void testRemoveItemAction() {
+        // Simulate removeItem button click
+        ActionEvent removeItemEvent = new ActionEvent(removeItemButton, ActionEvent.ACTION_PERFORMED, "Remove Item");
+        transactionInterface.actionPerformed(removeItemEvent);
+        // Verify remove item dialog is displayed (enterItem interface logic)
+        assertTrue(transactionInterface.isVisible()); // or another condition depending on your UI flow
+    }
+
+    @Test
+    public void testEndTransactionAction_withItemsInCart() {
+        // Simulate endTransaction button click with items in the cart
+        transactionInterface.transaction.addItemToCart("Sample Item");  // Add item to the cart for test
+        ActionEvent endTransactionEvent = new ActionEvent(endTransactionButton, ActionEvent.ACTION_PERFORMED, "End");
+        transactionInterface.actionPerformed(endTransactionEvent);
+        // Verify end transaction dialog or payment flow is displayed
+        assertFalse(transactionInterface.isVisible()); // Should be hidden after payment or end
+    }
+
+    @Test
+    public void testEndTransactionAction_withEmptyCart() {
+        // Simulate endTransaction button click with empty cart
+        ActionEvent endTransactionEvent = new ActionEvent(endTransactionButton, ActionEvent.ACTION_PERFORMED, "End");
+        transactionInterface.actionPerformed(endTransactionEvent);
+        // Verify that a dialog appears indicating cart is empty
+        assertTrue(transactionInterface.isVisible()); // Should still be visible
+    }
+
+    @Test
+    public void testCancelTransactionAction() {
+        // Simulate cancelTransaction button click
+        ActionEvent cancelTransactionEvent = new ActionEvent(cancelTransactionButton, ActionEvent.ACTION_PERFORMED, "Cancel");
+        transactionInterface.actionPerformed(cancelTransactionEvent);
+        // Verify transaction interface is closed after cancel
+        assertFalse(transactionInterface.isVisible());
+    }
+
+    @Test
+    public void testRentalOperation() {
+        // Create a Transaction_Interface for Rental operation
+        Transaction_Interface rentalTransaction = new Transaction_Interface("Rental");
+
+        // Verify that customer phone is requested and rental logic is executed
+        assertEquals("Database/rentalDatabase.txt", rentalTransaction.databaseFile);
+    }
+
+    @Test
+    public void testReturnOperation_forRentedItems() {
+        // Create a Transaction_Interface for Return operation
+        Transaction_Interface returnTransaction = new Transaction_Interface("Return");
+
+        // Simulate the choice for "Rented Items"
+        returnTransaction.choice = 0;
+
+        // Verify that the appropriate database file is selected for rental returns
+        assertEquals("Database/rentalDatabase.txt", returnTransaction.databaseFile);
+    }
+
+    @Test
+    public void testReturnOperation_forUnsatisfactoryItems() {
+        // Create a Transaction_Interface for Return operation
+        Transaction_Interface returnTransaction = new Transaction_Interface("Return");
+
+        // Simulate the choice for "Unsatisfactory items"
+        returnTransaction.choice = 1;
+
+        // Verify that the appropriate database file is selected for item returns
+        assertEquals("Database/itemDatabase.txt", returnTransaction.databaseFile);
+    }
+
+    @Test
+    public void testCustomerPhoneInput() {
+        // Simulate customer phone input during rental or return
+        transactionInterface.getCustomerPhone();
+
+        // Check if valid phone number is captured and management user check is performed
+        assertTrue(transactionInterface.phoneNum > 1000000000L);
+    }
+}

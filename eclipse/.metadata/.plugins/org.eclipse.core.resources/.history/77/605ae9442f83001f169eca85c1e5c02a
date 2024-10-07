@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="CSE216" default="default" basedir=".">
+    <description>Builds, tests, and runs the project CSE216.</description>
+
+    <!-- Import build-impl.xml (NetBeans build file) -->
+    <import file="nbproject/build-impl.xml"/>
+
+    <!-- Classpath -->
+    <path id="project.classpath">
+        <pathelement location="lib/junit-4.13.2.jar"/> <!-- JUnit dependency -->
+        <pathelement location="lib/mockito-core-4.8.1.jar"/> <!-- Mockito dependency -->
+        <!-- Add any other required libraries here -->
+    </path>
+
+    <!-- Pre-compile tasks (if needed) -->
+    <target name="-pre-compile">
+        <echo message="Pre-compilation tasks..." />
+    </target>
+
+    <!-- Post-compile tasks (if needed) -->
+    <target name="-post-compile">
+        <echo message="Post-compilation tasks..." />
+    </target>
+
+    <!-- Pre-test compilation tasks (if needed) -->
+    <target name="-pre-compile-test">
+        <echo message="Pre-test compilation tasks..." />
+    </target>
+
+    <!-- Post-test compilation tasks -->
+    <target name="-post-compile-test">
+        <echo message="Post-test compilation tasks..." />
+    </target>
+
+    <!-- Run JUnit tests -->
+    <target name="test" depends="compile-test">
+        <echo message="Running JUnit tests..." />
+        <junit printsummary="yes">
+            <classpath refid="project.classpath"/>
+            <test name="com.yourpackage.YourTestClass"/> <!-- Change to your test class -->
+        </junit>
+    </target>
+
+    <!-- Customize other targets as needed -->
+</project>

@@ -1,0 +1,126 @@
+import org.junit.Before;
+import org.junit.After;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.io.*;
+import java.util.*;
+import java.text.SimpleDateFormat;
+
+public class POSSystemTest {
+
+    private POSSystem posSystemInstance;
+    private final String EMPLOYEE_DB_PATH = "test_employeeDatabase.txt";
+    private final String RENTAL_DB_PATH = "test_rentalDatabase.txt";
+    private final String ITEM_DB_PATH = "test_itemDatabase.txt";
+    private final String TEMP_FILE_PATH = "test_temp.txt";
+    private final String LOG_FILE_PATH = "test_employeeLogfile.txt";
+
+    @Before
+    public void init() throws Exception {
+        posSystemInstance = new POSSystem();
+        posSystemInstance.employeeDatabase = EMPLOYEE_DB_PATH;
+        posSystemInstance.rentalDatabaseFile = RENTAL_DB_PATH;
+        posSystemInstance.itemDatabaseFile = ITEM_DB_PATH;
+        // posSystemInstance.tempFile = TEMP_FILE_PATH;
+        setupEmployeeDatabase();
+    }
+
+    @After
+    public void cleanup() {
+        new File(EMPLOYEE_DB_PATH).delete();
+        new File(RENTAL_DB_PATH).delete();
+        new File(ITEM_DB_PATH).delete();
+        new File(TEMP_FILE_PATH).delete();
+        new File(LOG_FILE_PATH).delete();
+    }
+
+    @Test
+    public void testFileReading() {
+        posSystemInstance.readFile();
+        assertEquals(2, posSystemInstance.employees.size());
+        assertEquals("John", posSystemInstance.employees.get(0).getName());
+        assertEquals("Admin", posSystemInstance.employees.get(1).getPosition());
+    }
+
+    @Test
+    public void testLogUserIn() throws Exception {
+        posSystemInstance.logInToFile("user1", "John Doe", "Cashier", Calendar.getInstance());
+        List<String> logEntries = fetchLogEntries(LOG_FILE_PATH);
+        assertTrue(logEntries.get(0).contains("John Doe (user1 Cashier) logs into POS System"));
+    }
+
+    @Test
+    public void testTemporaryFileCheck() throws IOException {
+        assertFalse(posSystemInstance.checkTemp());
+        new FileWriter(TEMP_FILE_PATH).close();
+        assertTrue(posSystemInstance.checkTemp());
+    }
+
+    @Test
+    public void testResumeFromTemp() throws IOException {
+        setupTempFile("Sale");
+        assertEquals("Sale", posSystemInstance.continueFromTemp(1234567890L));
+
+        setupTempFile("Rental");
+        assertEquals("Rental", posSystemInstance.continueFromTemp(1234567890L));
+
+        setupTempFile("Return");
+        assertEquals("Return", posSystemInstance.continueFromTemp(1234567890L));
+
+        new File(TEMP_FILE_PATH).delete();
+        assertEquals("", posSystemInstance.continueFromTemp(1234567890L));
+    }
+
+    @Test
+    public void testLogUserOut() throws Exception {
+        posSystemInstance.logOutToFile("user1", "John Doe", "Cashier", Calendar.getInstance());
+        List<String> logEntries = fetchLogEntries(LOG_FILE_PATH);
+        assertTrue(logEntries.get(0).contains("John Doe (user1 Cashier) logs out of POS System"));
+    }
+
+    @Test
+    public void testUserLogout() {
+        posSystemInstance.username = "user1";
+        posSystemInstance.name = "John Doe";
+        posSystemInstance.logOut("Cashier");
+        List<String> logEntries = fetchLogEntries(LOG_FILE_PATH);
+        assertTrue(logEntries.get(0).contains("John Doe (user1 Cashier) logs out of POS System"));
+    }
+
+    @Test
+    public void testUserLogin() {
+        assertEquals(1, posSystemInstance.logIn("user1", "pass1"));
+        assertEquals(2, posSystemInstance.logIn("user2", "pass2"));
+        assertEquals(0, posSystemInstance.logIn("user3", "pass3"));
+        assertEquals(0, posSystemInstance.logIn("user1", "wrongpass"));
+    }
+
+    private void setupEmployeeDatabase() throws IOException {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(EMPLOYEE_DB_PATH))) {
+            writer.println("user1 pass1 John Doe Cashier");
+            writer.println("user2 pass2 Jane Smith Admin");
+        }
+    }
+
+    private void setupTempFile(String type) throws IOException {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(TEMP_FILE_PATH))) {
+            writer.println(type);
+            writer.println("1234567890");
+            writer.println("1 2");
+        }
+    }
+
+    private List<String> fetchLogEntries(String filename) {
+        List<String> lines = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return lines;
+    }
+}

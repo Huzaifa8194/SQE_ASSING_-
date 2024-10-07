@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="CSE216" default="resolve" basedir=".">
+    <description>Builds, tests, and runs the project CSE216.</description>
+
+    <!-- Import build-impl.xml (NetBeans build file) -->
+    <import file="nbproject/build-impl.xml"/>
+
+    <!-- Ivy settings -->
+    <target name="ivy-init">
+        <mkdir dir="lib"/>
+        <ivy:settings/>
+    </target>
+
+    <!-- Resolve dependencies using Ivy -->
+    <target name="resolve" depends="ivy-init">
+        <ivy:retrieve pattern="lib/[artifact]-[revision].[ext]"/>
+    </target>
+
+    <!-- Classpath -->
+    <path id="project.classpath">
+        <fileset dir="lib">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+    <!-- Compile -->
+    <target name="compile" depends="resolve">
+        <javac srcdir="src" destdir="build/classes" classpathref="project.classpath"/>
+    </target>
+
+    <!-- Run JUnit tests -->
+    <target name="test" depends="compile">
+        <junit printsummary="yes">
+            <classpath refid="project.classpath"/>
+            <test name="com.yourpackage.YourTestClass"/> <!-- Change to your test class -->
+        </junit>
+    </target>
+
+    <!-- Post-compile tasks -->
+    <target name="-post-compile">
+        <echo message="Post-compilation tasks..." />
+    </target>
+</project>

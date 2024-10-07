@@ -1,0 +1,41 @@
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+
+public class ItemTest {
+
+    private Item item;
+
+    @Before
+    public void setUp() {
+        // Prepare an Item instance before each test
+        item = new Item(1, "TestItem", 19.99f, 10);
+    }
+
+    @Test
+    public void testConstructor() {
+        // Check that the constructor sets attributes correctly
+        assertEquals(1, item.getItemID());
+        assertEquals("TestItem", item.getItemName());
+        assertEquals(19.99f, item.getPrice(), 0.001);
+        assertEquals(10, item.getAmount());
+    }
+
+    @Test
+    public void testUpdateAmount() {
+        // Change the amount and verify the modification
+        item.updateAmount(15);
+        assertEquals(15, item.getAmount());
+
+        // Change to a lesser amount and verify
+        item.updateAmount(5);
+        assertEquals(5, item.getAmount());
+
+        // Change to zero amount and verify
+        item.updateAmount(0);
+        assertEquals(0, item.getAmount());
+    }
+
+    @Test
+    public void testGetters() {
+       

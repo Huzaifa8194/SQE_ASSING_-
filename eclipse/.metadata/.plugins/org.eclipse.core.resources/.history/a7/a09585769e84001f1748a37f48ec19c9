@@ -1,0 +1,47 @@
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+
+public class ProductTest {
+
+    private Product product; // Changed Item to Product
+
+    @Before
+    public void initialize() {
+        // Create a Product object before each test
+        product = new Product(1, "SampleItem", 19.99f, 10);
+    }
+
+    @Test
+    public void testConstructorInitialization() {
+        // Check if the constructor sets the attributes correctly
+        assertEquals(1, product.getItemID());
+        assertEquals("SampleItem", product.getItemName());
+        assertEquals(19.99f, product.getPrice(), 0.001);
+        assertEquals(10, product.getAmount());
+    }
+
+    @Test
+    public void testModifyAmount() {
+        // Change the amount and verify the update
+        product.updateAmount(15);
+        assertEquals(15, product.getAmount());
+
+        // Change to a lower amount and verify
+        product.updateAmount(5);
+        assertEquals(5, product.getAmount());
+
+        // Change to zero amount and verify
+        product.updateAmount(0);
+        assertEquals(0, product.getAmount());
+    }
+
+    @Test
+    public void testAccessors() {
+        // Verify that the accessor methods return the correct values
+        assertEquals("SampleItem", product.getItemName());
+        assertEquals(1, product.getItemID());
+        assertEquals(19.99f, product.getPrice(), 0.001);
+        assertEquals(10, product.getAmount());
+    }
+}

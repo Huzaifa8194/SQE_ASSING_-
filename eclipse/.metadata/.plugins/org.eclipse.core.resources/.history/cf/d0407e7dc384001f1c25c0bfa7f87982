@@ -1,0 +1,229 @@
+import org.junit.*;
+import static org.junit.Assert.*;
+import java.io.*;
+import java.util.List;
+
+public class EmployeeTest {
+    private EmployeeManagement management;
+    private static final String DB_PATH = "TestDatabase/testEmployeeDB.txt";
+    private static final String TEMP_PATH = "TestDatabase/testNewEmployeeDB.txt";
+    private final ByteArrayOutputStream output = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream error = new ByteArrayOutputStream();
+    private final PrintStream consoleOut = System.out;
+    private final PrintStream consoleErr = System.err;
+
+    @Before
+    public void init() throws IOException {
+        management = new EmployeeManagement();
+        EmployeeManagement.employeeDatabase = DB_PATH;
+        management.temp = TEMP_PATH;
+
+        File directory = new File("TestDatabase");
+        directory.mkdirs();
+        try (PrintWriter writer = new PrintWriter(new FileWriter(DB_PATH))) {
+            writer.println("1000 Admin John Doe password123");
+            writer.println("1001 Cashier Jane Smith pass456");
+        }
+
+        System.setOut(new PrintStream(output));
+        System.setErr(new PrintStream(error));
+    }
+
+    @After
+    public void cleanUp() {
+        new File(DB_PATH).delete();
+        new File(TEMP_PATH).delete();
+        new File("TestDatabase").delete();
+        System.setOut(consoleOut);
+        System.setErr(consoleErr);
+    }
+
+    @Test
+    public void testFetchEmployeeList() {
+        List<Employee> employees = management.getEmployeeList();
+        assertEquals(2, employees.size());
+        assertEquals("1000", employees.get(0).getUsername());
+        assertEquals("1001", employees.get(1).getUsername());
+    }
+
+    @Test
+    public void testInsertEmployee() {
+        management.add("New Employee", "newpass", true);
+        List<Employee> employees = management.getEmployeeList();
+        assertEquals(3, employees.size());
+        Employee newEmployee = employees.get(2);
+        assertEquals("1002", newEmployee.getUsername());
+        assertEquals("Cashier", newEmployee.getPosition());
+        assertEquals("New Employee", newEmployee.getName());
+        assertEquals("newpass", newEmployee.getPassword());
+    }
+
+    @Test
+    public void testInsertAdmin() {
+        management.add("New Admin", "adminpass", false);
+        List<Employee> employees = management.getEmployeeList();
+        assertEquals(3, employees.size());
+        Employee newAdmin = employees.get(2);
+        assertEquals("1002", newAdmin.getUsername());
+        assertEquals("Admin", newAdmin.getPosition());
+        assertEquals("New Admin", newAdmin.getName());
+        assertEquals("adminpass", newAdmin.getPassword());
+    }
+
+    @Test
+    public void testRemoveExistingEmployee() {
+        boolean isDeleted = management.delete("1001");
+        assertTrue(isDeleted);
+        List<Employee> employees = management.getEmployeeList();
+        assertEquals(1, employees.size());
+        assertEquals("1000", employees.get(0).getUsername());
+    }
+
+    @Test
+    public void testRemoveNonExistingEmployee() {
+        boolean isDeleted = management.delete("9999");
+        assertFalse(isDeleted);
+        List<Employee> employees = management.getEmployeeList();
+        assertEquals(2, employees.size());
+    }
+
+    @Test
+    public void testModifyExistingEmployee() {
+        int updateStatus = management.update("1000", "newpass", "Cashier", "Updated Name");
+        assertEquals(0, updateStatus);
+        List<Employee> employees = management.getEmployeeList();
+        Employee modifiedEmployee = employees.get(0);
+        assertEquals("1000", modifiedEmployee.getUsername());
+        assertEquals("Cashier", modifiedEmployee.getPosition());
+        assertEquals("Updated Name", modifiedEmployee.getName());
+        assertEquals("newpass", modifiedEmployee.getPassword());
+    }
+
+    @Test
+    public void testModifyNonExistingEmployee() {
+        int updateStatus = management.update("9999", "newpass", "Cashier", "New Name");
+        assertEquals(-1, updateStatus);
+    }
+
+    @Test
+    public void testModifyWithInvalidRole() {
+        int updateStatus = management.update("1000", "newpass", "InvalidPosition", "Updated Name");
+        assertEquals(-2, updateStatus);
+    }
+
+    @Test
+    public void testModifyWithEmptyValues() {
+        int updateStatus = management.update("1000", "", "", "");
+        assertEquals(0, updateStatus);
+        List<Employee> employees = management.getEmployeeList();
+        Employee modifiedEmployee = employees.get(0);
+        assertEquals("1000", modifiedEmployee.getUsername());
+        assertEquals("Admin", modifiedEmployee.getPosition());
+        assertEquals("John Doe", modifiedEmployee.getName());
+        assertEquals("password123", modifiedEmployee.getPassword());
+    }
+
+    @Test
+    public void testAddEmployeeFileNotFound() throws IOException {
+        File dbFile = new File(EmployeeManagement.employeeDatabase);
+        dbFile.delete();
+        
+        management.add("Test Employee", "testpass", true);
+        
+        assertTrue(output.toString().contains("Unable to open file Log File for logIn"));
+    }
+
+    @Test
+    public void testAddEmployeeIOException() throws IOException {
+        File dbFile = new File(EmployeeManagement.employeeDatabase);
+        dbFile.setReadOnly();
+        
+        management.add("Test Employee", "testpass", true);
+        
+        assertTrue(error.toString().contains("java.io.IOException"));
+        
+        dbFile.setWritable(true);
+    }
+
+    @Test
+    public void testRemoveEmployeeFileNotFound() throws IOException {
+        management.getEmployeeList(); // Load the employee list
+        File tempFile = new File(management.temp);
+        tempFile.delete();
+        
+        management.delete("1000");
+        
+        assertTrue(output.toString().contains("Unable to open file 'temp'"));
+    }
+
+    @Test
+    public void testRemoveEmployeeIOException() throws IOException {
+        management.getEmployeeList(); // Load the employee list
+        File tempFile = new File(management.temp);
+        tempFile.createNewFile();
+        tempFile.setReadOnly();
+        
+        management.delete("1000");
+        
+        assertTrue(output.toString().contains("Error reading file 'temp'"));
+        
+        tempFile.setWritable(true);
+        tempFile.delete();
+    }
+
+    @Test
+    public void testModifyEmployeeFileNotFound() throws IOException {
+        File tempFile = new File(management.temp);
+        tempFile.delete();
+        
+        management.update("1000", "newpass", "Cashier", "Updated Name");
+        
+        assertTrue(output.toString().contains("Unable to open file 'temp'"));
+    }
+
+    @Test
+    public void testModifyEmployeeIOException() throws IOException {
+        File tempFile = new File(management.temp);
+        tempFile.createNewFile();
+        tempFile.setReadOnly();
+        
+        management.update("1000", "newpass", "Cashier", "Updated Name");
+        
+        assertTrue(output.toString().contains("Error reading file 'temp'"));
+        
+        tempFile.setWritable(true);
+        tempFile.delete();
+    }
+
+    @Test
+    public void testReadEmployeeFileFileNotFound() {
+        EmployeeManagement.employeeDatabase = "NonExistentFile.txt";
+        
+        management.readFile();
+        
+        assertTrue(output.toString().contains("Unable to open file 'NonExistentFile.txt'"));
+    }
+
+    @Test
+    public void testReadEmployeeFileIOException() throws IOException {
+        File dbFile = new File(EmployeeManagement.employeeDatabase);
+        dbFile.setReadOnly();
+        
+        management.readFile();
+        
+        assertTrue(output.toString().contains("Error reading file '" + EmployeeManagement.employeeDatabase + "'"));
+        
+        dbFile.setWritable(true);
+    }
+
+    @Test
+    public void testOperatingSystemCheck() {
+        String previousOS = System.getProperty("os.name");
+        try {
+            System.setProperty("os.name", "Windows 10");
+            management.readFile();
+        } finally {
+            System.setProperty("os.name", previousOS);
+        }
+    }
+}

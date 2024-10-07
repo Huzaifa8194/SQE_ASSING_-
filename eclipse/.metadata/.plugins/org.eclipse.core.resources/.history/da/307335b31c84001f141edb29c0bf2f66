@@ -1,0 +1,117 @@
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.swing.JButton;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import java.util.*;
+
+
+public class Payment_InterafaceTest {
+
+    private Payment_Interface paymentInterface;
+    private PointOfSale mockTransaction;
+
+    @Before
+    public void setUp() {
+        // Create a mock PointOfSale object for testing
+        mockTransaction = new POS() {
+            @Override
+            public double getTotal() {
+                return 100.00; // Mock total amount
+            }
+
+            @Override
+            public double endPOS(String database) {
+                return 110.00; // Mock total with taxes
+            }
+
+            @Override
+            public boolean creditCard(String cardNo) {
+                return cardNo.equals("1234567812345678"); // Mock valid credit card
+            }
+
+            @Override
+            public List<Item> getCart() {
+                return List.of(new Item(1, "Item1", 2f, 50)); // Mock cart with one item
+            }
+        };
+
+        // Initialize the Payment_Interface with mock data
+        paymentInterface = new Payment_Interface(mockTransaction, "mockDatabase", "Sale", "1234567890", false);
+    }
+
+    @Test
+    public void testPayCash() {
+        // Simulate cash payment input
+        String input = "150.00"; // Simulated user input for cash payment
+        String previousDialogText = paymentInterface.transactionDialog.getText();
+
+        // Simulate user input via JOptionPane
+        JOptionPane.showInputDialog(input);
+        paymentInterface.PayCash.doClick(); // Simulate button click
+
+        // Verify that the transaction dialog contains the correct payment information
+        assertTrue(paymentInterface.transactionDialog.getText().contains("Paid: $150.00"));
+        assertTrue(paymentInterface.transactionDialog.getText().contains("Change: $50.00"));
+        assertFalse(paymentInterface.transactionDialog.getText().equals(previousDialogText));
+    }
+
+    @Test
+    public void testPayElectronic() {
+        // Simulate credit card payment input
+        String cardNo = "1234567812345678"; // Valid credit card
+        String input = "20.00"; // Simulated cash back amount
+
+        // Simulate user input via JOptionPane for card number and cash back
+        JOptionPane.showInputDialog(cardNo);
+        JOptionPane.showInputDialog(input);
+        
+        paymentInterface.PayElectronic.doClick(); // Simulate button click
+
+        // Verify that the transaction dialog contains the correct cash back information
+        assertTrue(paymentInterface.transactionDialog.getText().contains("Cash back: $20.00"));
+        assertTrue(paymentInterface.transactionDialog.getText().contains("Total price: $120.00"));
+    }
+
+    @Test
+    public void testCancelTransaction() {
+        // Simulate clicking the cancel button
+        paymentInterface.cancelTransaction.doClick();
+
+        // Verify that the transaction was canceled
+        assertFalse(paymentInterface.isDisplayable());
+        assertTrue(JOptionPane.getMessageDialog(null, "Transaction canceled") != null);
+    }
+
+    @Test
+    public void testConfirmPayment() {
+        // Simulate clicking the confirm button
+        paymentInterface.confirm.doClick();
+
+        // Verify that the payment was confirmed
+        assertFalse(paymentInterface.isDisplayable());
+        assertTrue(JOptionPane.getMessageDialog(null, "Payment confirmed") != null);
+    }
+
+    @Test
+    public void testUpdateTextReturnOperation() {
+        // Change the operation to "Return"
+        paymentInterface.operation = "Return";
+        paymentInterface.updateText();
+
+        // Verify that the transaction dialog has the correct text for return operation
+        assertTrue(paymentInterface.transactionDialog.getText().contains("To be paid"));
+    }
+
+    @Test
+    public void testAppendReturnDate() {
+        // Test the appendReturnDate method
+        paymentInterface.appendReturnDate();
+
+        // Verify that the return date is appended to the transaction dialog
+        assertTrue(paymentInterface.transactionDialog.getText().contains("Return Date:"));
+    }
+}

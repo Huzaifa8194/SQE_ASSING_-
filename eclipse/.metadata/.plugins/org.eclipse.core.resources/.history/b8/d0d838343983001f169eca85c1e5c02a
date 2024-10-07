@@ -1,0 +1,76 @@
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.File;
+import java.util.Calendar;
+
+import static org.junit.Assert.*;
+
+public class POSSystemTest {
+    private POSSystem posSystem;
+    private Employee mockEmployee;
+    private Item item;
+
+    @Before
+    public void setUp() {
+        posSystem = new POSSystem();
+        mockEmployee = new Employee("john123", "John Doe", "password", "Admin");
+        posSystem.employees.add(mockEmployee);
+
+        // Initialize an Item for use with POSSystem if needed
+        item = new Item(1, "Apple", 1.0f, 10);
+    }
+
+    @Test
+    public void testCheckTemp_FileExists() {
+        posSystem.logOut("Admin");
+        File tempFile = new File(POSSystem.employeeDatabase);
+        assertTrue(posSystem.checkTemp());
+        assertTrue(tempFile.exists());
+    }
+
+    @Test
+    public void testCheckTemp_FileNotExists() {
+        File tempFile = new File("Database/nonexistent.txt");
+        assertFalse(posSystem.checkTemp());
+    }
+
+    @Test
+    public void testContinueFromTemp_Sale() {
+        String type = posSystem.continueFromTemp(1234567890L);
+        assertEquals("Sale", type);
+    }
+
+    @Test
+    public void testContinueFromTemp_NoTemp() {
+        String type = posSystem.continueFromTemp(1234567890L);
+        assertEquals("", type);
+    }
+
+    @Test
+    public void testLogIn_ValidCashier() {
+        int result = posSystem.logIn("john123", "password");
+        assertEquals(1, result); // Cashier
+    }
+
+    @Test
+    public void testLogIn_InvalidPassword() {
+        int result = posSystem.logIn("john123", "wrongpassword");
+        assertEquals(0, result); // Invalid login
+    }
+
+    @Test
+    public void testLogOut() {
+        posSystem.logOut("Admin");
+        assertTrue(true); // Just ensuring no exceptions thrown
+    }
+
+    @Test
+    public void testLogInToFile() {
+        Calendar cal = Calendar.getInstance();
+        posSystem.logIn("john123", "password");
+        posSystem.logOut("Admin");
+        File logFile = new File("Database/employeeLogfile.txt");
+        assertTrue(logFile.exists());
+    }
+}

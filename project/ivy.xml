@@ -1,0 +1,7 @@
+<ivy-module version="2.0">
+    <info organisation="yourorg" module="CSE216"/>
+    <dependencies>
+        <dependency org="junit" name="junit" rev="4.13.2"/>
+        <dependency org="org.mockito" name="mockito-core" rev="4.8.1"/>
+    </dependencies>
+</ivy-module>

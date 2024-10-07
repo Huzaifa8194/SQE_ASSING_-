@@ -1,0 +1,69 @@
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+
+import static org.junit.Assert.*;
+
+public class Admin_InterfaceTest {
+
+    private Admin_Interface adminInterface;
+    private POSSystem system;
+    private EmployeeManagement management;
+
+    @Before
+    public void setUp() {
+        system = new POSSystem();
+        management = new EmployeeManagement();
+        adminInterface = new Admin_Interface(system);
+    }
+
+    @Test
+    public void testAddCashierButton() {
+        JButton addCashierButton = adminInterface.addButton;
+        // Simulate a button click
+        addCashierButton.doClick();
+        
+        // Check if the AddEmployee_Interface is displayed
+        assertTrue("AddEmployee_Interface should be visible", 
+            adminInterface.getComponent(0).isVisible()); // Assuming it is the first component
+    }
+
+    @Test
+    public void testRemoveEmployee() {
+        // Assuming an employee with ID "1" exists
+        management.add(new Employee("1", "John Doe", "Cashier", "password")); 
+        assertTrue("Employee should be added", management.getEmployeeList().size() > 0);
+
+        // Simulate removing the employee
+        String employeeID = "1"; // ID to remove
+        adminInterface.removeButton.doClick(); // Simulate button click
+
+        // Check if the employee was removed
+        assertFalse("Employee should be removed", management.getEmployeeList().contains(employeeID));
+    }
+
+    @Test
+    public void testLogOut() {
+        adminInterface.LogOutButton.doClick(); // Simulate button click
+        // Verify if the login interface is visible after logging out
+        assertTrue("Login_Interface should be visible", 
+            adminInterface.getComponent(1).isVisible()); // Adjust index based on components
+    }
+
+    @Test
+    public void testUpdateTextArea() {
+        // Setup initial employees
+        management.add(new Employee("1", "Jane Doe", "Admin", "password1"));
+        management.add(new Employee("2", "John Smith", "Cashier", "password2"));
+
+        // Update text area
+        adminInterface.updateTextArea();
+
+        // Check the content of the text area
+        String expectedText = "JaneDoe\tAdmin\tJane Doe\t\tpassword1\n" +
+                              "JohnSmith\tCashier\tJohn Smith\t\tpassword2\n";
+        assertEquals("Text area content should match expected", expectedText, adminInterface.textShow.getText());
+    }
+}

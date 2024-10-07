@@ -1,0 +1,93 @@
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.swing.JButton;
+
+import static org.junit.Assert.*;
+
+public class Cashier_InterfaceTest {
+
+    private Cashier_Interface cashierInterface;
+    private POSSystem mockSystem;
+
+    @Before
+    public void setUp() {
+        mockSystem = new POSSystem(); // Assuming POSSystem has a no-arg constructor
+        cashierInterface = new Cashier_Interface(mockSystem);
+    }
+
+    @Test
+    public void testSaleButtonAction() {
+        JButton saleButton = cashierInterface.saleButton;
+
+        // Simulate button click
+        saleButton.doClick();
+        
+        // Check if Transaction_Interface is opened
+        assertNotNull("Transaction_Interface should be opened", cashierInterface.transaction);
+       // assertEquals("Operation should be Sale", "Sale", cashierInterface.transaction.getOperation()); // Assuming there is a getOperation method
+    }
+
+    @Test
+    public void testRentalButtonAction() {
+        JButton rentalButton = cashierInterface.rentalButton;
+
+        // Simulate button click
+        rentalButton.doClick();
+        
+        // Check if Transaction_Interface is opened
+        assertNotNull("Transaction_Interface should be opened", cashierInterface.transaction);
+       // assertEquals("Operation should be Rental", "Rental", cashierInterface.transaction.getOperation());
+    }
+
+    @Test
+    public void testReturnButtonAction() {
+        JButton returnButton = cashierInterface.returnButton;
+
+        // Simulate button click
+        returnButton.doClick();
+        
+        // Check if Transaction_Interface is opened
+        assertNotNull("Transaction_Interface should be opened", cashierInterface.transaction);
+        assertEquals("Operation should be Return", "Return", cashierInterface.transaction.getOperation());
+    }
+
+    @Test
+    public void testLogOutButtonAction() {
+        JButton logOutButton = cashierInterface.LogOutButton;
+
+        // Simulate button click
+        logOutButton.doClick();
+
+        // Verify that the Login_Interface is opened
+        assertTrue("Login_Interface should be visible", 
+            cashierInterface.isVisible()); // You might need to adjust this check based on how you implement the Login_Interface visibility
+    }
+
+    @Test
+    public void testTempTransactionRestoration() {
+        // Simulate condition for temp transaction restoration
+        // You would need to set up your mockSystem to return true for checkTemp() and handle phone input
+        // For this test, we need to mock or simulate the JOptionPane input
+
+        // The code below simulates a valid phone number being entered
+        // Normally, you would have to set up the system to be able to capture or simulate this interaction
+
+        // Mock the expected behavior of checkTemp
+        // Assume checkTemp() returns true and manage the rest of the conditions
+        boolean tempRestoration = mockSystem.checkTemp(); // This should return true in the test
+
+        if (tempRestoration) {
+            String phone = "1234567890"; // Simulated user input for phone number
+            long phoneNum = Long.parseLong(phone);
+            if (mockSystem.checkUser(phoneNum)) {
+                String operation = mockSystem.continueFromTemp(phoneNum);
+                cashierInterface.transaction = new Transaction_Interface(operation);
+                cashierInterface.transaction.setVisible(true);
+            }
+        }
+        
+        // Check if Transaction_Interface is opened after temp transaction restoration
+        assertNotNull("Transaction_Interface should be opened", cashierInterface.transaction);
+    }
+}

@@ -1,0 +1,112 @@
+import org.junit.Before;
+import org.junit.Test;
+import java.io.*;
+import java.util.*;
+
+import static org.junit.Assert.*;
+
+public class EmployeeTest {
+
+    private EmployeeManagement employeeManagement;
+    private Employee mockEmployee;
+
+    @Before
+    public void setUp() throws Exception {
+        employeeManagement = new EmployeeManagement();
+
+        // Mock employee to be used for testing
+        mockEmployee = new Employee("1", "John Doe", "Cashier", "password123");
+        employeeManagement.employees.add(mockEmployee);
+    }
+
+    @Test
+    public void testGetEmployeeList() {
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertNotNull(employees);
+        assertTrue(employees.contains(mockEmployee));
+    }
+
+    @Test
+    public void testAddEmployee_Cashier() {
+        employeeManagement.add("Jane Doe", "password123", true); // Cashier role
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertEquals(2, employees.size());
+        Employee newEmployee = employees.get(employees.size() - 1);
+        assertEquals("Jane Doe", newEmployee.getName());
+        assertEquals("Cashier", newEmployee.getPosition());
+    }
+
+    @Test
+    public void testAddEmployee_Admin() {
+        employeeManagement.add("Admin User", "password456", false); // Admin role
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertEquals(2, employees.size());
+        Employee newEmployee = employees.get(employees.size() - 1);
+        assertEquals("Admin User", newEmployee.getName());
+        assertEquals("Admin", newEmployee.getPosition());
+    }
+
+    @Test
+    public void testDeleteEmployee_Success() {
+        boolean result = employeeManagement.delete("1");
+        assertTrue(result);
+        assertEquals(0, employeeManagement.employees.size()); // Should remove the employee
+    }
+
+    @Test
+    public void testDeleteEmployee_NotFound() {
+        boolean result = employeeManagement.delete("99"); // Non-existent user
+        assertFalse(result);
+    }
+
+    @Test
+    public void testUpdateEmployee_Success() {
+        int result = employeeManagement.update("1", "newPassword", "Admin", "New Name");
+        assertEquals(0, result); // Success
+        Employee updatedEmployee = employeeManagement.getEmployeeList().get(0);
+        assertEquals("newPassword", updatedEmployee.getPassword());
+        assertEquals("Admin", updatedEmployee.getPosition());
+        assertEquals("New Name", updatedEmployee.getName());
+    }
+
+    @Test
+    public void testUpdateEmployee_InvalidPosition() {
+        int result = employeeManagement.update("1", "newPassword", "InvalidRole", "New Name");
+        assertEquals(-2, result); // Invalid position error
+    }
+
+    @Test
+    public void testUpdateEmployee_NotFound() {
+        int result = employeeManagement.update("99", "newPassword", "Admin", "New Name"); // Non-existent user
+        assertEquals(-1, result); // User not found
+    }
+
+    @Test
+    public void testReadFile_FileNotFound() {
+        employeeManagement.employeeDatabase = "invalid_path.txt"; // Force file not found
+        employeeManagement.readFile();
+        assertTrue(employeeManagement.employees.isEmpty()); // No employees read
+    }
+
+    @Test
+    public void testReadFile_Success() throws IOException {
+        // Create a temp file to simulate the employee database
+        File tempFile = new File("Database/employeeDatabase.txt");
+        tempFile.getParentFile().mkdirs();
+        BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+        writer.write("2 Cashier Jane Doe password456");
+        writer.newLine();
+        writer.close();
+
+        // Test reading the file
+        employeeManagement.readFile();
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertEquals(1, employees.size());
+        Employee employee = employees.get(0);
+        assertEquals("Jane Doe", employee.getName());
+        assertEquals("Cashier", employee.getPosition());
+
+        // Clean up temp file
+        tempFile.delete();
+    }
+}

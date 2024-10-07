@@ -1,0 +1,161 @@
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.After;
+import static org.junit.Assert.*;
+
+import java.io.*;
+import java.util.List;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.HashSet;
+import java.util.Set;
+
+public class EmployeeTest {
+
+    private EmployeeManagement employeeManagement;
+    private static final String TEST_DATABASE = "Database/testEmployeeDatabase.txt";
+    private static final String TEST_TEMP = "Database/testNewEmployeeDatabase.txt";
+
+    @Before
+    public void setUp() throws IOException, NoSuchFieldException, IllegalAccessException {
+        new File("Database").mkdirs();
+        setStaticField(EmployeeManagement.class, "employeeDatabase", TEST_DATABASE);
+        employeeManagement = new EmployeeManagement();
+        setField(employeeManagement, "temp", TEST_TEMP);
+
+        File testFile = new File(TEST_DATABASE);
+        FileWriter writer = new FileWriter(testFile);
+        writer.write("1000 Admin John Doe password123\n");
+        writer.write("1001 Cashier Jane Smith pass456\n");
+        writer.close();
+    }
+
+    @After
+    public void tearDown() {
+        new File(TEST_DATABASE).delete();
+        new File(TEST_TEMP).delete();
+        new File("Database").delete();
+    }
+
+    // ... (previous helper methods and tests remain the same)
+
+    @Test
+    public void testAddEmployeeFileNotFoundException() throws Exception {
+        setStaticField(EmployeeManagement.class, "employeeDatabase", "/nonexistent/path/employeeDatabase.txt");
+        employeeManagement.add("New Employee", "newpass", true);
+        // The method should complete without throwing an exception
+    }
+
+    @Test
+    public void testAddEmployeeIOException() throws Exception {
+        File file = new File(TEST_DATABASE);
+        file.setReadOnly();
+        
+        // On Unix-like systems, remove write permissions
+        if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+            Set<PosixFilePermission> perms = new HashSet<>();
+            perms.add(PosixFilePermission.OWNER_READ);
+            perms.add(PosixFilePermission.GROUP_READ);
+            perms.add(PosixFilePermission.OTHERS_READ);
+            Files.setPosixFilePermissions(file.toPath(), perms);
+        }
+        
+        employeeManagement.add("IO Exception Test", "pass", true);
+        
+        // Reset permissions
+        file.setWritable(true);
+        
+        // The method should complete without throwing an exception
+    }
+
+    @Test
+    public void testDeleteEmployeeFileNotFoundException() throws Exception {
+        setField(employeeManagement, "temp", "/nonexistent/path/tempFile.txt");
+        boolean result = employeeManagement.delete("1000");
+        assertFalse(result);
+    }
+
+    @Test
+    public void testDeleteEmployeeIOException() throws Exception {
+        File file = new File(TEST_TEMP);
+        file.createNewFile();
+        file.setReadOnly();
+        
+        // On Unix-like systems, remove write permissions
+        if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+            Set<PosixFilePermission> perms = new HashSet<>();
+            perms.add(PosixFilePermission.OWNER_READ);
+            perms.add(PosixFilePermission.GROUP_READ);
+            perms.add(PosixFilePermission.OTHERS_READ);
+            Files.setPosixFilePermissions(file.toPath(), perms);
+        }
+        
+        boolean result = employeeManagement.delete("1000");
+        assertFalse(result);
+        
+        // Reset permissions and delete the file
+        file.setWritable(true);
+        file.delete();
+    }
+
+    @Test
+    public void testUpdateEmployeeFileNotFoundException() throws Exception {
+        setStaticField(EmployeeManagement.class, "employeeDatabase", "/nonexistent/path/employeeDatabase.txt");
+        int result = employeeManagement.update("1000", "newpass", "Cashier", "John Updated");
+        assertEquals(0, result);
+    }
+
+    @Test
+    public void testUpdateEmployeeIOException() throws Exception {
+        File file = new File(TEST_DATABASE);
+        file.setReadOnly();
+        
+        // On Unix-like systems, remove write permissions
+        if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+            Set<PosixFilePermission> perms = new HashSet<>();
+            perms.add(PosixFilePermission.OWNER_READ);
+            perms.add(PosixFilePermission.GROUP_READ);
+            perms.add(PosixFilePermission.OTHERS_READ);
+            Files.setPosixFilePermissions(file.toPath(), perms);
+        }
+        
+        int result = employeeManagement.update("1000", "newpass", "Cashier", "John Updated");
+        assertEquals(0, result);
+        
+        // Reset permissions
+        file.setWritable(true);
+    }
+
+    @Test
+    public void testReadFileFileNotFoundException() throws Exception {
+        setStaticField(EmployeeManagement.class, "employeeDatabase", "/nonexistent/path/employeeDatabase.txt");
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertTrue(employees.isEmpty());
+    }
+
+    @Test
+    public void testReadFileIOException() throws Exception {
+        // Create a mock FileReader that throws an IOException
+        FileReader mockFileReader = new FileReader(TEST_DATABASE) {
+            @Override
+            public int read(char[] cbuf, int off, int len) throws IOException {
+                throw new IOException("Mocked IO Exception");
+            }
+        };
+
+        // Use reflection to replace the FileReader in readFile method
+        Method readFileMethod = EmployeeManagement.class.getDeclaredMethod("readFile");
+        readFileMethod.setAccessible(true);
+
+        Field fileReaderField = FileReader.class.getDeclaredField("lock");
+        fileReaderField.setAccessible(true);
+        fileReaderField.set(mockFileReader, new Object());
+
+        setField(employeeManagement, "fileReader", mockFileReader);
+
+        List<Employee> employees = employeeManagement.getEmployeeList();
+        assertTrue(employees.isEmpty());
+    }
+}
